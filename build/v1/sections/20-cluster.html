@@ -1,0 +1,42 @@
+<section id="cluster" class="sec cluster" aria-labelledby="cluster-title">
+  <div class="wrap">
+    <header class="learn-head reveal">
+      <p class="h-eyebrow"><span class="num">02</span>Cluster</p>
+      <h2 id="cluster-title" class="h2 learn-title">Three machines, <em>one</em> job at a time.</h2>
+      <p class="lead learn-lead">I run my own small cluster at home. Three machines on Tailscale. The laptop gives the orders. The PC with the RTX 4090 does the heavy work. The Mac mini takes the small MLX jobs.</p>
+    </header>
+
+    <figure class="cl-figure reveal">
+      <svg class="cl-svg cl-wide" viewBox="0 0 960 460" role="img" aria-labelledby="clw-t clw-d" xmlns="http://www.w3.org/2000/svg"><title id="clw-t">Home AI cluster</title><desc id="clw-d">A MacBook controller sends jobs over Tailscale to a Windows PC with an RTX 4090, which runs llama.cpp, an API door, ComfyUI and Unsloth in WSL, and to a Mac mini, which runs mlx-lm.</desc><defs><marker id="clw-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="cl-arrow"/></marker></defs><g class="cl-node"><rect class="cl-box" x="30" y="160" width="240" height="140" rx="6"/><text class="cl-name" x="50" y="194">MacBook Pro M2 Pro</text><text class="cl-spec" x="50" y="216">16 GB</text><text class="cl-role" x="50" y="240">CONTROLLER</text><text class="cl-spec" x="50" y="268">runs no models</text></g><line class="cl-net" x1="340" y1="20" x2="340" y2="440"/><text class="cl-net-label" x="330" y="40" text-anchor="end">TAILSCALE</text><g class="cl-node"><rect class="cl-box" x="420" y="20" width="520" height="240" rx="6"/><text class="cl-name" x="440" y="54">Windows PC, RTX 4090</text><text class="cl-spec" x="440" y="76">24 GB VRAM, 128 GB RAM</text><text class="cl-role" x="440" y="100">HEAVY WORKER</text><g class="cl-chip"><rect x="440" y="130" width="140" height="30" rx="3"/><text x="452" y="149">llama.cpp</text></g><g class="cl-chip"><rect x="592" y="130" width="140" height="30" rx="3"/><text x="604" y="149">API door</text></g><g class="cl-chip"><rect x="744" y="130" width="140" height="30" rx="3"/><text x="756" y="149">ComfyUI</text></g><g class="cl-chip"><rect x="440" y="172" width="292" height="30" rx="3"/><text x="452" y="191">WSL + Unsloth (LoRA)</text></g><text class="cl-spec" x="440" y="232">video, image, big LLM, fine-tuning</text></g><g class="cl-node"><rect class="cl-box" x="420" y="300" width="520" height="140" rx="6"/><text class="cl-name" x="440" y="334">Mac mini M2</text><text class="cl-spec" x="440" y="356">8 GB</text><text class="cl-role" x="440" y="380">SMALL MLX WORKER</text><g class="cl-chip"><rect x="440" y="394" width="140" height="30" rx="3"/><text x="452" y="413">mlx-lm</text></g></g><path class="cl-flow" d="M270 210 C 340 210, 350 140, 418 140" marker-end="url(#clw-a)"/><path class="cl-flow" d="M270 250 C 340 250, 350 370, 418 370" marker-end="url(#clw-a)"/><text class="cl-flow-label" x="352" y="200">jobs</text></svg>
+      <svg class="cl-svg cl-tall" viewBox="0 0 356 720" role="img" aria-labelledby="clt-t clt-d" xmlns="http://www.w3.org/2000/svg"><title id="clt-t">Home AI cluster</title><desc id="clt-d">A MacBook controller sends jobs over Tailscale to a Windows PC with an RTX 4090 and to a Mac mini.</desc><defs><marker id="clt-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="cl-arrow"/></marker></defs><g class="cl-node"><rect class="cl-box" x="16" y="10" width="324" height="130" rx="6"/><text class="cl-name" x="36" y="44">MacBook Pro M2 Pro</text><text class="cl-spec" x="36" y="66">16 GB</text><text class="cl-role" x="36" y="90">CONTROLLER</text><text class="cl-spec" x="36" y="116">runs no models</text></g><line class="cl-net" x1="10" y1="180" x2="346" y2="180"/><text class="cl-net-label" x="20" y="172">TAILSCALE</text><path class="cl-flow" d="M178 140 L178 216" marker-end="url(#clt-a)"/><g class="cl-node"><rect class="cl-box" x="16" y="220" width="324" height="250" rx="6"/><text class="cl-name" x="36" y="254">Windows PC, RTX 4090</text><text class="cl-spec" x="36" y="276">24 GB VRAM, 128 GB RAM</text><text class="cl-role" x="36" y="300">HEAVY WORKER</text><g class="cl-chip"><rect x="36" y="330" width="136" height="30" rx="3"/><text x="48" y="349">llama.cpp</text></g><g class="cl-chip"><rect x="184" y="330" width="136" height="30" rx="3"/><text x="196" y="349">API door</text></g><g class="cl-chip"><rect x="36" y="370" width="136" height="30" rx="3"/><text x="48" y="389">ComfyUI</text></g><g class="cl-chip"><rect x="184" y="370" width="136" height="30" rx="3"/><text x="196" y="389">WSL + Unsloth</text></g><text class="cl-spec" x="36" y="428">video, image, big LLM,</text><text class="cl-spec" x="36" y="448">fine-tuning</text></g><path class="cl-flow" d="M300 140 C 360 200, 360 480, 300 546" marker-end="url(#clt-a)"/><g class="cl-node"><rect class="cl-box" x="16" y="550" width="324" height="150" rx="6"/><text class="cl-name" x="36" y="584">Mac mini M2</text><text class="cl-spec" x="36" y="606">8 GB</text><text class="cl-role" x="36" y="630">SMALL MLX WORKER</text><g class="cl-chip"><rect x="36" y="652" width="136" height="30" rx="3"/><text x="48" y="671">mlx-lm</text></g></g></svg>
+      <figcaption class="mono learn-label">MacBook = controller. RTX 4090 PC = heavy worker. Mac mini = small MLX worker.</figcaption>
+    </figure>
+
+    <div class="cl-runs reveal">
+      <h3 class="mono learn-label">What runs there</h3>
+      <dl class="cl-list">
+        <div class="cl-row"><dt class="mono">Video</dt><dd>MiniMax-H3, with up to 9 reference images and native audio. FastH3 Omni in int8, with Turbo and realism LoRAs stacked. LTX-2.5 in fp8: a 720p, 10 s clip in 94 s.</dd></div>
+        <div class="cl-row"><dt class="mono">Images</dt><dd>FLUX-3 Klein, 5 to 10 s per 1024 px image.</dd></div>
+        <div class="cl-row"><dt class="mono">Voices</dt><dd>VoxCPM.</dd></div>
+        <div class="cl-row"><dt class="mono">Small LLMs</dt><dd>Qwen3-1.7B on llama.cpp. mlx-lm on the Mac mini.</dd></div>
+        <div class="cl-row"><dt class="mono">Fine-tuning</dt><dd>LoRA fine-tuning with Unsloth in WSL.</dd></div>
+      </dl>
+    </div>
+
+    <div class="cl-harness reveal">
+      <h3 class="mono learn-label">The clip harness</h3>
+      <ol class="cl-stepper">
+        <li><span class="mono cl-step-n">01</span><p>A writer model plans the scenes.</p></li>
+        <li><span class="mono cl-step-n">02</span><p>FLUX makes keyframe sheets.</p></li>
+        <li><span class="mono cl-step-n">03</span><p>H3 renders 10 to 20 s clips, chained by the last 124 frames.</p></li>
+        <li><span class="mono cl-step-n">04</span><p>Agents review frame, voice and script, 0 to 100.</p></li>
+      </ol>
+    </div>
+
+    <aside class="cl-findings mono reveal" aria-label="Findings">
+      <p class="cl-findings-k">Findings</p>
+      <p>Two renders at once ran 3.5x slower. So the GPU takes one job at a time.</p>
+      <p>The controller runs no models. It only sends jobs.</p>
+    </aside>
+  </div>
+</section>

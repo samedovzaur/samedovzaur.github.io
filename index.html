@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en" class="tree-layout">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zaur Samadov</title>
+<meta name="description" content="Zaur Samadov, AI engineer. I build multimodal and LLM systems in production and write GPU kernels.">
+<meta name="author" content="Zaur Samadov">
+<meta name="theme-color" content="#100F0F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFCF0" media="(prefers-color-scheme: light)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Zaur Samadov">
+<meta property="og:description" content="AI engineer. I build multimodal and LLM systems in production and write GPU kernels.">
+<meta property="og:url" content="https://zaur.modimorph.com/">
+<meta property="og:site_name" content="Zaur Samadov">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://zaur.modimorph.com/">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Kanit:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/site.css?v=1108">
+<link rel="stylesheet" href="css/tree.css?v=1107">
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="preloader" aria-hidden="true"><small>loading the bench</small><p data-pct>0</p></div>
+
+<aside class="side" data-side aria-label="Page tree">
+  <div class="side-in">
+    <p class="side-k mono">Tree</p>
+    <nav class="tree mono" data-tree>
+      <ol>
+        <li><a href="#about">About</a>
+          <ol>
+            <li><a href="#about-exp">Experience</a></li>
+          </ol>
+        </li>
+        <li><a href="#projects">Projects</a>
+          <ol>
+            <li><a href="#p-prod">At work</a></li>
+            <li><a href="#p-own">On my own</a></li>
+            <li><a href="#p-models">Models</a></li>
+            </ol>
+        </li>
+        <li><a href="#open-source">Open source</a>
+          <ol>
+            <li><a href="#os-hf">Hugging Face</a></li>
+            <li><a href="#os-gh">GitHub</a></li>
+          </ol>
+        </li>
+        <li><a href="#cluster">Cluster</a>
+          <ol>
+            <li><a href="#c-arch">Architecture</a></li>
+          </ol>
+        </li>
+        <li><a href="#writing">Writing</a>
+          <ol>
+            <!-- WRITING-NAV:START -->
+
+<!-- WRITING-NAV:END -->
+          </ol>
+        </li>
+        <li data-nv><a href="#practising">Practising</a>
+          <ol data-tree-devices>
+            <li><a href="#practising-route">The route</a></li>
+          </ol>
+        </li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </nav>
+    <div class="side-foot">
+      <div class="meter" data-meter><span class="meter-bar" aria-hidden="true"><i data-meter-fill></i></span><b class="mono" data-meter-pct>0%</b></div>
+      <button class="theme-toggle mono" type="button" data-theme-toggle aria-label="Switch colour theme"><i>[</i> theme: <b data-theme-name>dark</b> <i>]</i></button>
+    </div>
+  </div>
+</aside>
+
+<header class="topbar" data-topbar>
+  <span class="topbar-here mono" data-here>about</span>
+  <button class="btn topbar-btn mono" type="button" aria-expanded="false" data-tree-open>tree</button>
+  <span class="topbar-meter" aria-hidden="true"><i data-meter-fill></i></span>
+</header>
+
+<main id="main" class="main">
+
+<section id="about" class="sec sec-about">
+  <div class="me">
+    <img class="me-photo" src="assets/profile.webp" width="200" height="200" alt="Zaur Samadov">
+    <div>
+      <h1 class="me-name">Zaur Samadov</h1>
+      <p class="me-role mono">AI engineer &middot; multimodal and LLM systems in production &middot; experiencing GPU kernels and inference hardware</p>
+    </div>
+  </div>
+  <p class="me-text">I am an AI engineer. I build multimodal and LLM systems for enterprise users and keep them running in production. The work covers the whole path: data and pipelines, model choice and fine-tuning, evaluation, guardrails and security, cost, deployment and on-call. I work closely with the people who use the systems.</p>
+  <p class="me-text me-text-2">I started with transformers in 2020 and keep learning. Right now I am studying inference hardware: CUDA kernels, profiling and serving, on my own GPU cluster. Work projects stay in-house; the public part is on <a class="ext" href="https://huggingface.co/zaursamadov" target="_blank" rel="noopener">Hugging Face</a> and <a class="ext" href="https://github.com/samedovzaur" target="_blank" rel="noopener">GitHub</a>.</p>
+
+  <h3 class="sub" id="about-exp">Experience</h3>
+  <ol class="cv">
+    <li><span class="cv-y mono">2025&ndash;now</span><div><b>Senior Member of Technical Staff, AI</b></div></li>
+    <li><span class="cv-y mono">2024&ndash;25</span><div><b>Member of Technical Staff, AI</b></div></li>
+    <li><span class="cv-y mono">2023</span><div><b>Software Engineer, LLM Safety and Hallucination</b></div></li>
+    <li><span class="cv-y mono">2023</span><div><b>Software Engineer, GenAI and Embedded AI</b></div></li>
+    <li><span class="cv-y mono">Education</span><div><b>Computer Engineering</b></div></li>
+  </ol>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects" class="sec">
+  <header class="whead"><h2 class="whead-h">projects</h2></header>
+  <h3 class="sub" id="p-prod">At work</h3>
+  <p class="para">Enterprise AI systems: multimodal and LLM pipelines, their evaluation and guardrails, and the serving behind them.</p>
+
+  <h3 class="sub" id="p-own">On my own</h3>
+  <p class="para">Systems work on a home GPU cluster: CUDA kernels, a Rust firewall, a real-time voice assistant. Media tools that turn a topic or a document into a short film or a study podcast. Small apps for driving coding agents from a phone. This site, where seven AI chips come apart in 3D.</p>
+
+  <h3 class="sub" id="p-models">Models</h3>
+  <p class="para">Six fine-tuned models and five datasets on <a class="ext" href="https://huggingface.co/zaursamadov" target="_blank" rel="noopener">Hugging Face</a>: finance question answering and named-entity recognition on Llama, plus a FLUX image LoRA.</p>
+</section>
+
+<!-- OPEN SOURCE -->
+<section id="open-source" class="sec">
+  <header class="whead"><h2 class="whead-h">open source</h2></header>
+  <div class="cols3 cols2">
+    <div id="os-hf">
+      <h3 class="sub">Hugging Face</h3>
+      <p class="stat">6 models &middot; 5 datasets</p>
+      <p class="para">Fine-tuned models and the datasets I built and annotated for them, all public.</p>
+    </div>
+    <div id="os-gh">
+      <h3 class="sub">GitHub</h3>
+      <p class="stat">18 bug reports</p>
+      <p class="para">Filed against inference servers and training frameworks while running them on my own hardware. Each one reproduced and documented.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CLUSTER -->
+<section id="cluster" class="sec">
+  <header class="whead"><h2 class="whead-h">cluster</h2></header>
+  <p class="lead-s">Three machines at home on one private mesh. One GPU job at a time.</p>
+
+  <h3 class="sub" id="c-arch">Architecture</h3>
+  <div class="diagram">
+    <svg class="arch" viewBox="0 0 920 540" role="img" aria-label="Architecture of the home cluster: a MacBook controller, a PC with an RTX 4090 and a Mac mini on one private mesh">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+      <rect class="mesh" x="10" y="14" width="900" height="512" rx="18"/>
+      <text class="m" x="30" y="508">Tailscale mesh &middot; one private network, SSH to every machine</text>
+
+      <rect class="box" x="34" y="200" width="212" height="150" rx="10"/>
+      <text class="t" x="56" y="226">MacBook Pro M2 Pro</text><text class="m" x="56" y="244">16 GB &middot; controller</text>
+      <rect class="chip" x="56" y="260" width="168" height="30" rx="6"/><text class="m" x="68" y="279">Claude Code</text>
+      <rect class="chip" x="56" y="298" width="168" height="30" rx="6"/><text class="m" x="68" y="317">control app</text>
+
+      <rect class="box" x="330" y="64" width="330" height="428" rx="10"/>
+      <text class="t" x="350" y="92">PC &middot; RTX 4090 &middot; heavy worker</text><text class="m" x="350" y="110">24 GB VRAM &middot; 128 GB RAM &middot; 4 TB</text>
+      <rect class="chip door" x="350" y="130" width="290" height="44" rx="6"/><text class="t s" x="364" y="150">Door</text><text class="m" x="364" y="166">keyed &middot; OpenAI-compatible</text>
+      <rect class="chip" x="350" y="206" width="290" height="44" rx="6"/><text class="t s" x="364" y="226">llama.cpp server</text><text class="m" x="364" y="242">text, one model at a time</text>
+      <rect class="chip" x="350" y="266" width="290" height="44" rx="6"/><text class="t s" x="364" y="286">ComfyUI</text><text class="m" x="364" y="302">video and images</text>
+      <rect class="chip" x="350" y="326" width="290" height="44" rx="6"/><text class="t s" x="364" y="346">WSL + Unsloth</text><text class="m" x="364" y="362">fine-tuning, inside tmux</text>
+      <rect class="chip dash" x="350" y="410" width="290" height="56" rx="6"/><text class="t s" x="364" y="432">Model store</text><text class="m" x="364" y="450">one master copy of every file</text>
+
+      <rect class="box" x="720" y="200" width="170" height="150" rx="10"/>
+      <text class="t" x="736" y="226">Mac mini M2</text><text class="m" x="736" y="244">8 GB &middot; small worker</text>
+      <rect class="chip" x="736" y="262" width="138" height="48" rx="6"/><text class="t s" x="748" y="282">mlx-lm</text><text class="m" x="748" y="298">small LLM jobs</text>
+
+      <path class="arr" d="M246 258 C 292 258, 292 152, 350 152" marker-end="url(#ah)"/>
+      <path class="arr" d="M495 174 L495 206" marker-end="url(#ah)"/>
+      <path class="arr" d="M640 152 C 690 152, 690 226, 720 226" marker-end="url(#ah)"/>
+      <path class="arr" d="M640 438 C 760 438, 805 420, 805 350" marker-end="url(#ah)"/>
+
+      <text class="n" x="40" y="172">every request carries one key</text>
+      <text class="n" x="672" y="100">small jobs go to the mini</text>
+      <text class="n" x="672" y="470">copied only when needed</text>
+      <text class="n" x="728" y="160">queue raised to 128</text><text class="n" x="728" y="176">(default 5 dropped calls)</text>
+      <path class="lead" d="M806 182 C 806 190, 806 194, 806 199"/>
+      <text class="n" x="40" y="400">10 s video clip: about 94 s</text>
+      <path class="lead" d="M196 394 C 250 380, 300 320, 346 290"/><circle class="dot" cx="347" cy="289" r="2.5"/>
+      <text class="n" x="40" y="452">downloads land here only</text>
+      <path class="lead" d="M190 446 C 250 446, 300 440, 346 438"/><circle class="dot" cx="347" cy="438" r="2.5"/>
+      <text class="n" x="40" y="70">one GPU job at a time:</text><text class="n" x="40" y="86">two renders at once ran 3.5x slower</text>
+    </svg>
+  </div>
+
+</section>
+
+<!-- WRITING -->
+<section id="writing" class="sec sec-write">
+  <header class="whead">
+    <span class="whead-n" data-count>9 articles</span>
+    <h2 class="whead-h">writing</h2>
+  </header>
+
+  <div class="wdeck" id="w-deck" data-deck data-limit="2" data-total="9">
+    <p class="wmeta"><span>Latest</span><b data-deck-count>7</b><button type="button" aria-expanded="false" data-deck-all hidden>Show all</button></p>
+    <ol class="wdeck-cards" data-deck-cards>
+<!-- WCARDS:START -->
+      <li class="wcard" id="w-my-open-kernel-challengemuse-13-days" data-src="substack">
+        <time class="wcard-date" datetime="2026-11-07">7 Nov 2026</time>
+        <h3>My Open Kernel Challenge/Muse: 13 days, 633 judge jobs</h3>
+        <p>What the judge really measures, why reading beat inventing, how noisy the leaderboard was, and what an agent team on a 4090 can and cannot do.</p>
+        <dl class="wcard-src"><dt>S</dt><dd>Substack</dd></dl>
+        <a class="wcard-go" href="https://zaursamadov.substack.com/p/my-open-kernel-challengemuse-13-days" target="_blank" rel="noopener">Read on Substack <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-unlocked-the-tensor-cores-on-rtx4090" data-src="substack">
+        <time class="wcard-date" datetime="2026-10-26">26 Oct 2026</time>
+        <h3>Unlocked the tensor cores on RTX4090: Video got faster, image and LLM didn&#x27;t move</h3>
+        <p>I tested the viral GeForce unlock on the models we actually run at home. One video model got 28% faster, which I didn&#x27;t expect at all.</p>
+        <dl class="wcard-src"><dt>S</dt><dd>Substack</dd></dl>
+        <a class="wcard-go" href="https://zaursamadov.substack.com/p/unlocked-the-tensor-cores-on-rtx4090" target="_blank" rel="noopener">Read on Substack <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-97d5d97a1089" data-src="medium">
+        <time class="wcard-date" datetime="2025-11-10">10 Nov 2025</time>
+        <h3>What is the deal with this “Chinese OpenAI”?</h3>
+        <p>K2 Thinking is a Planning Agent. It writes a short plan, chooses the first tool, runs it, checks the result, and repeats until the goal is done. This loop is simple,...</p>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/what-is-the-deal-with-this-chinese-openai-97d5d97a1089" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-31cf13dab31a" data-src="medium">
+        <time class="wcard-date" datetime="2023-04-18">18 Apr 2023</time>
+        <h3>The Tragic end Of Developers (LLms)</h3>
+        <p>Large language models (LLMs) are a form of artificial intelligence (AI) model that generates human-like text by being trained on massive amounts of natural language...</p>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/the-tragic-end-of-developers-llms-31cf13dab31a" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-a909b14ba377" data-src="medium">
+        <time class="wcard-date" datetime="2023-03-06">6 Mar 2023</time>
+        <h3>RNNs: Explained with more simple way</h3>
+        <p>RNNs: Explained with more simple way</p>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/rnns-explained-with-more-simple-way-a909b14ba377" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-a1cdfc8bced1" data-src="medium">
+        <time class="wcard-date" datetime="2023-01-25">25 Jan 2023</time>
+        <h3>AI for Sustainability &amp; Transportation</h3>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/the-transportation-industry-is-a-major-participant-in-global-greenhouse-gas-emissions-and-air-a1cdfc8bced1" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-1daff4f7f123" data-src="medium">
+        <time class="wcard-date" datetime="2022-12-21">21 Dec 2022</time>
+        <h3>Part 1: Machine_Learning</h3>
+        <p>Machine learning has the ability to adapt and improve over time, as it is able to learn from new data and experiences. This makes it a powerful tool for solving...</p>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/part-1-machine-learning-1daff4f7f123" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-8fdc7f47c57d" data-src="medium">
+        <time class="wcard-date" datetime="2022-12-17">17 Dec 2022</time>
+        <h3>Do We Need to Be scared of AI?!</h3>
+        <p>Artificial intelligence, or AI, has the potential to revolutionize every aspect of our lives, from the way we work and communicate to the way we learn and make...</p>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/do-we-need-to-be-scared-of-ai-8fdc7f47c57d" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+      <li class="wcard" id="w-m-a0c20a12d512" data-src="medium">
+        <time class="wcard-date" datetime="2022-12-15">15 Dec 2022</time>
+        <h3>Don’t Code, Build Software! (ChatGPT, Imagine Video AI)</h3>
+        <p>Writing code and Building Software are two different things. They both involve working with computers, programming and learning different languages but end result is...</p>
+        <dl class="wcard-src"><dt>M</dt><dd>Medium</dd></dl>
+        <a class="wcard-go" href="https://medium.com/@ZaurSamedov/dont-code-build-software-a0c20a12d512" target="_blank" rel="noopener">Read on Medium <span aria-hidden="true">&#8599;</span></a>
+      </li>
+<!-- WCARDS:END -->
+      </ol>
+    </div>
+    <!-- WSTEPS:START -->
+
+<!-- WSTEPS:END -->
+  </div>
+</section>
+
+<!-- PRACTISING -->
+<section id="practising" class="sec sec-learn">
+  <header class="whead"><h2 class="whead-h">practising</h2></header>
+  <p class="lead-s">I write CUDA and Triton kernels and profile each one with Nsight Compute. Below: seven AI accelerators, taken apart.</p>
+
+  <div id="practising-route">
+  <details class="term" data-term>
+    <summary class="term-toggle">what I am doing
+      <svg class="chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 4.5 6 8.5l4-4"/></svg>
+    </summary>
+    <div class="term-panel">
+      <div class="term-tabs"><span class="is-on" aria-current="true">now</span><a class="term-link" href="details/learning-sources.md">learning sources <span class="arr" aria-hidden="true">-&gt;</span></a></div>
+      <p class="term-hunk" aria-hidden="true">@@ now @@</p>
+      <ol class="term-lines" data-term-lines></ol>
+      <p class="term-out" data-term-out></p>
+    </div>
+  </details>
+  </div>
+
+  <div class="scrolly" data-scrolly>
+  <div class="gallery" id="learning" aria-label="A 3D teardown gallery of seven AI chips" data-gallery>
+    <div class="g-stage" data-g-stage>
+      <div class="g-fallback" data-g-fallback hidden>
+        <div class="gf-chip" aria-hidden="true"><i></i></div>
+        <p class="mono">3D needs WebGL. The facts and the details still work.</p>
+      </div>
+    </div>
+    <div class="g-coming" data-g-coming hidden>
+      <p class="g-coming-k mono">model coming next</p>
+      <p class="g-coming-t" data-g-coming-text></p>
+      <a class="link mono" data-g-coming-src href="details/README.md">read the research notes -&gt;</a>
+    </div>
+    <nav class="g-ui g-crumbs mono" aria-label="Teardown level" data-g-crumbs></nav>
+    <div class="g-ui g-top-right">
+      <div class="g-folio mono" aria-label="Device index"><span data-g-count>01</span><i aria-hidden="true"></i><small>of <span data-g-total>7</span></small></div>
+      <button class="btn g-btn" type="button" aria-expanded="false" aria-controls="g-drawer" data-g-details>Details</button>
+    </div>
+    <nav class="g-ui g-dots mono" aria-label="Devices">
+      <button type="button" data-g-prev>prev</button>
+      <ol data-g-dots></ol>
+      <button type="button" data-g-next>next</button>
+    </nav>
+    <aside class="g-ui g-parts mono" aria-label="Parts of this level" data-g-parts><ol></ol></aside>
+    <div class="g-ui g-id" aria-live="polite">
+      <div class="g-title"><span class="g-idx mono" data-g-idx>01</span><h3 class="g-name" data-g-name>GeForce RTX 5090</h3><span class="g-year mono" data-g-year>2025</span></div>
+      <p class="g-meta mono" data-g-meta>NVIDIA</p>
+    </div>
+    <div class="g-ui g-ctrl" role="group" aria-label="Model controls" data-g-ctrl>
+      <div class="g-dial">
+        <svg viewBox="0 0 88 88" aria-hidden="true"><circle class="g-dial-track" cx="44" cy="44" r="38"/><circle class="g-dial-arc" cx="44" cy="44" r="38" data-g-arc/></svg>
+        <output for="g-explode" data-g-readout>0%</output>
+        <label class="sr-only" for="g-explode">Teardown</label>
+        <input class="g-dial-input" id="g-explode" type="range" min="0" max="100" step="1" value="0" data-g-explode title="Teardown">
+        <span class="g-dial-k" aria-hidden="true">teardown</span>
+      </div>
+      <div class="g-ctrl-btns">
+        <button class="btn g-btn" type="button" aria-pressed="false" data-g-xray>X-ray</button>
+        <button class="btn g-btn" type="button" data-g-reset>Reset</button>
+        <button class="btn btn-primary g-btn" type="button" data-g-enter hidden>Enter</button>
+      </div>
+    </div>
+    <div class="g-label" data-g-label aria-hidden="true"></div>
+    <aside class="g-drawer" id="g-drawer" aria-label="Device details" data-g-drawer hidden>
+      <div class="g-drawer-head">
+        <p class="h-eyebrow"><span class="num">Details</span><span data-g-dname></span></p>
+        <button class="icon-btn" type="button" aria-label="Close details" data-g-close>&times;</button>
+      </div>
+      <div class="g-drawer-body" data-g-dbody></div>
+    </aside>
+  </div>
+  <div class="steps" data-steps aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="sec sec-last">
+  <h2 class="sr-only">contact</h2>
+  <ul class="elsewhere elsewhere-inline">
+    <li><a class="ext" href="https://www.linkedin.com/in/zaursamedov">LinkedIn</a></li>
+    <li><a class="ext" href="https://github.com/samedovzaur">GitHub</a></li>
+    <li><a class="ext" href="https://huggingface.co/zaursamadov">Hugging Face</a></li>
+    <li><a class="ext" href="https://zaursamadov.substack.com">Substack</a></li>
+  </ul>
+  <p class="foot-mail mono">zaur@modimorph.com</p>
+</section>
+
+</main>
+
+<script src="js/site.js?v=1107"></script>
+<script src="js/terminal.js?v=1107"></script>
+<script src="js/tree.js?v=1107"></script>
+<script src="js/deck.js?v=1107"></script>
+<script src="js/bg.js?v=1107"></script>
+<script src="js/spot.js?v=1107"></script>
+<script type="module" src="js/gallery.js?v=1109"></script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+<head><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kernels on the RTX 4090</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--paper:#F4F1EA;--card:#FBF9F4;--stage:#EBE7DD;--ink:#141411;--ink2:#3F3E39;--line:#D8D3C6;--acc:#1F7F67;--acc2:#A9681E;--good:#2F8A55;--bad:#B5443A;--dot:#D8D3C6;
+--code:#EFEBE2;--disp:'Instrument Serif',Georgia,serif;--font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0F100E;--card:#171815;--stage:#131411;--ink:#ECE9E1;--ink2:#B9B5AA;--line:#2A2B26;--acc:#8FD3BD;--acc2:#E0A458;--dot:#2A2B26;--code:#121310;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0F100E;--card:#171815;--stage:#131411;--ink:#ECE9E1;--ink2:#B9B5AA;--line:#2A2B26;--acc:#8FD3BD;--acc2:#E0A458;--dot:#2A2B26;--code:#121310;color-scheme:dark}
+html,body{height:100%;margin:0}
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:inherit}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--font)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+svg{flex:none}
+.app{height:100%;display:grid;grid-template-columns:78px minmax(0,1fr) 400px;grid-template-rows:84px minmax(0,1fr) 138px;gap:14px;padding:14px}
+.rail{grid-row:1/4;display:flex;flex-direction:column;gap:6px;padding-top:2px}
+.rail button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 2px;border:0;border-radius:14px;background:none;color:var(--ink2);font-size:12px}
+.rail button svg{width:25px;height:25px}
+.rail button[aria-current]{background:var(--card);color:var(--acc);box-shadow:inset 0 0 0 1px var(--line)}
+header.top{grid-column:2;display:flex;align-items:center;gap:16px;min-width:0;position:relative}
+header.top .mark{width:54px;height:54px;color:var(--acc)}
+header h1{font:700 42px/.92 var(--disp);letter-spacing:.01em;margin:0;text-transform:uppercase;white-space:nowrap}
+header h1 span{color:var(--acc2)}
+header p{margin:7px 0 0;font:600 14px/1 var(--disp);letter-spacing:.3em;color:var(--ink2);text-transform:uppercase}
+header .trace{position:absolute;right:0;top:6px;width:min(420px,40%);height:72px;color:var(--line)}
+.prog{grid-column:3;display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 18px}
+.prog svg{width:34px;height:34px}
+.prog .pg{flex:1}
+.prog .pg b{font:700 17px var(--disp);letter-spacing:.1em}
+.bar{height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--acc);width:0;transition:width .4s}
+.prog .pn{font:700 26px var(--disp)}
+.prog small{display:block;color:var(--ink2);font-size:.78rem;text-align:right}
+.stage{grid-column:2;position:relative;border-radius:22px;border:1px solid var(--line);overflow:hidden;min-height:0;
+ background:radial-gradient(var(--dot) 1px,transparent 1.3px) 0 0/22px 22px,var(--stage)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#callouts,#labels{position:absolute;inset:0;pointer-events:none}
+.callout{position:absolute;width:232px;pointer-events:auto;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;display:flex;gap:11px;align-items:flex-start}
+.callout:hover{border-color:var(--ink2)}
+.callout svg{width:26px;height:26px;margin-top:2px}
+.callout b{display:block;font:700 18px/1.05 var(--disp);letter-spacing:.04em;text-transform:uppercase}
+.callout .prose{display:block;margin-top:3px;font-size:.86rem;line-height:1.35;color:var(--ink2)}
+.lbl{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;font:600 12px var(--disp);letter-spacing:.06em;text-transform:uppercase;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1px 7px;white-space:nowrap}
+#labels{display:none}
+.crumbs{position:absolute;left:16px;top:14px;display:flex;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 6px;max-width:calc(100% - 32px);overflow-x:auto}
+.crumbs button{border:0;background:none;padding:3px 7px;border-radius:8px;font:600 14px var(--disp);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);white-space:nowrap}
+.crumbs button[aria-current]{color:var(--ink)}
+.crumbs i{color:var(--ink2);font-style:normal}
+.task{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:min(430px,calc(100% - 560px));min-width:300px;background:var(--card);border:2px solid var(--acc);border-radius:16px;padding:11px 15px 12px}
+.task .tk-h{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 13px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+.task .tk-h div{display:flex;gap:6px}
+.task .tk-h button{border:1px solid var(--line);background:var(--stage);border-radius:8px;padding:2px 8px;font:600 12px var(--font);letter-spacing:0;text-transform:none;color:var(--ink2);display:flex;align-items:center}
+.task .tk-h svg{width:14px;height:14px}
+.task .tk-t{margin:6px 0 0;font-size:1.02rem}
+.task .tk-hint{margin:6px 0 0;color:var(--ink2);font-size:.92rem}
+.task .tk-r{margin-top:10px;padding:9px 12px;border-radius:10px;background:color-mix(in srgb,var(--good) 12%,transparent)}
+.task .tk-r p{margin:0}
+.task .tk-r a{color:var(--acc)}
+.tk-next{margin-top:8px;border:0;border-radius:9px;background:var(--acc);color:#fff;font:700 15px var(--disp);letter-spacing:.08em;text-transform:uppercase;padding:6px 14px}
+.task.min .tk-t,.task.min .tk-hint,.task.min .tk-r{display:none}
+.legend{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:5px;width:min(560px,calc(100% - 24px));pointer-events:none}
+.legend span{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:.82rem}
+.sw{display:inline-block;flex:none;width:11px;height:11px;border-radius:3px}
+#tip{position:absolute;pointer-events:none;display:none;max-width:260px;background:var(--ink);color:var(--card);border-radius:10px;padding:7px 10px;font-size:.85rem;z-index:5}
+#tip b{display:block}
+#tip i{opacity:.7;font-size:.78rem}
+#fade{position:absolute;inset:0;background:var(--stage);opacity:0;pointer-events:none;transition:opacity .22s}
+.toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px;max-width:calc(100% - 24px);overflow-x:auto}
+.toolbar button{height:36px;min-width:38px;border:0;border-radius:10px;background:none;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 8px;font:600 13px var(--disp);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.toolbar button:hover{background:var(--stage)}
+.toolbar button svg{width:19px;height:19px}
+.toolbar button[aria-pressed=true]{background:color-mix(in srgb,var(--acc) 17%,transparent);color:var(--acc)}
+.toolbar label{display:flex;align-items:center;gap:6px;font:600 13px var(--disp);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);padding:0 6px}
+.toolbar input[type=range]{width:84px;accent-color:var(--acc)}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 3px;flex:none}
+.fail{position:absolute;inset:auto 0 45% 0;text-align:center;color:var(--ink2)}
+.side{grid-column:3;grid-row:2;display:flex;flex-direction:column;gap:14px;min-height:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;min-height:0}
+.info{flex:1}
+.tabs{display:flex;gap:20px;padding:12px 20px 0;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:6px 0 9px;font:700 16px var(--disp);letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);border-bottom:3px solid transparent}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--acc2)}
+.pbody{padding:14px 20px 18px;overflow:auto;flex:1}
+.pbody h2{font:700 30px/1 var(--disp);letter-spacing:.02em;text-transform:uppercase;margin:6px 0 10px}
+.chip{display:inline-flex;gap:7px;align-items:center;font-size:.82rem;color:var(--ink2)}
+.chip svg{width:16px;height:16px}
+.pbody p{margin:0 0 10px}
+.feat{display:flex;gap:14px;align-items:center;margin:9px 0}
+.feat i{flex:none;width:42px;height:42px;border:1px solid var(--line);border-radius:12px;display:grid;place-items:center}
+.feat i svg{width:22px;height:22px}
+.nums{width:100%;border-collapse:collapse}
+.nums td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.nums td:last-child{text-align:right;font-family:var(--mono);font-size:.86rem;padding-left:12px}
+.kids{display:flex;flex-wrap:wrap;gap:7px}
+.kids button{display:flex;gap:7px;align-items:center;border:1px solid var(--line);background:var(--stage);border-radius:9px;padding:5px 10px;font-size:.88rem}
+.go{margin-top:14px;width:100%;border:0;border-radius:11px;background:var(--acc);color:#fff;font:700 17px var(--disp);letter-spacing:.08em;text-transform:uppercase;padding:9px}
+.off{color:var(--bad)}
+.muted{color:var(--ink2)}
+.codep .ph{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 10px 18px}
+.codep .ph b{font:700 17px var(--disp);letter-spacing:.09em}
+.codep .ph div{display:flex;gap:6px}
+.codep .ph button{width:36px;height:34px;border:1px solid var(--line);background:var(--stage);border-radius:9px;display:grid;place-items:center}
+.codep .ph button svg{width:17px;height:17px}
+.codep .ph #run{background:var(--acc2);border-color:var(--acc2);color:#fff;width:44px}
+.codep .ph #run:disabled{opacity:.5}
+#src{margin:0 12px;padding:8px 0;background:var(--code);border:1px solid var(--line);border-radius:10px;font:13px/1.65 var(--mono);overflow:auto;max-height:190px;white-space:pre}
+#src .ln{display:block;padding-right:12px}
+#src .ln i{display:inline-block;width:34px;text-align:right;margin-right:12px;color:var(--ink2);font-style:normal;opacity:.6}
+#src .ln.on{background:color-mix(in srgb,var(--acc2) 22%,transparent)}
+#src b{color:#7C4DCC;font-weight:600}#src var{color:var(--acc);font-style:normal}#src u{color:#C0702B;text-decoration:none}#src s{color:#3B8A4A;text-decoration:none}#src em{color:var(--ink2)}
+.mon{margin:8px 12px 12px;border-top:1px dashed var(--line);padding-top:6px;font:12.5px/1.5 var(--mono);max-height:120px;overflow:auto}
+.mon b{display:flex;align-items:center;gap:6px;font:700 12px var(--disp);letter-spacing:.14em;color:var(--good)}
+.mon b::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--good)}
+.mon span{color:var(--ink2);margin-right:6px}
+.lessons{grid-column:2/4;grid-row:3;display:flex;flex-direction:column;min-width:0}
+.lessons h3{font:700 21px/1 var(--disp);letter-spacing:.08em;margin:2px 0 10px}
+.strip{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px}
+.lesson{flex:none;width:280px;height:90px;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 34px 6px 6px;text-align:left;position:relative}
+.lesson img,.lesson .ph0{width:112px;height:76px;border-radius:11px;background:var(--stage);object-fit:cover}
+.lesson b{font:700 17px/1.1 var(--disp);letter-spacing:.06em;text-transform:uppercase}
+.lesson[aria-current]{border:2px solid var(--acc2)}
+.lesson .ck{position:absolute;top:9px;right:10px;width:19px;height:19px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff}
+.lesson .ck.ok{background:var(--good);border-color:var(--good)}
+.lesson .ck svg{width:12px;height:12px}
+.term{border-bottom:1.5px dotted var(--acc);cursor:help}
+.term.rep{border-bottom-color:color-mix(in srgb,var(--acc) 35%,transparent)}
+#pop{position:fixed;z-index:60;display:none;max-width:min(330px,92vw);background:var(--card);border:1px solid var(--ink2);border-radius:12px;padding:12px 14px;font-size:.92rem;line-height:1.45}
+#pop .pt{display:block;font:700 19px var(--disp);letter-spacing:.04em;text-transform:uppercase}
+#pop p{margin:4px 0}#pop .sub{color:var(--ink2)}
+#pop .pr{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#pop .pr button{font-size:.8rem;padding:2px 8px;border:1px solid var(--line);background:var(--stage);border-radius:7px}
+#pop a{color:var(--acc)}
+dialog{max-width:min(620px,94vw);width:100%;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);padding:0}
+dialog::backdrop{background:rgb(10 12 20/.5)}
+.dlg-h{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--line)}
+.dlg-h input{flex:1;padding:6px 10px;border:1px solid var(--line);border-radius:9px;background:var(--stage);color:var(--ink);font:inherit}
+.dlg-h button{border:1px solid var(--line);background:var(--stage);border-radius:9px;padding:4px 12px}
+.dlist{list-style:none;margin:0;padding:4px 16px 14px;max-height:66vh;overflow:auto}
+.dlist li{padding:8px 0;border-bottom:1px solid var(--line)}
+.dlist ul{list-style:none;padding-left:18px;margin:0}
+.dlist button{border:0;background:none;display:flex;gap:8px;align-items:center;padding:2px 0;text-align:left}
+@media (max-width:1100px){
+ .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 62vh auto auto;height:auto;min-height:100%}
+ .rail{grid-row:auto;flex-direction:row;overflow-x:auto;order:6}
+ .rail button{flex:1;min-width:64px}
+ header.top,.prog,.stage,.side,.lessons{grid-column:1;grid-row:auto}
+ header h1{font-size:26px;white-space:normal}header .trace{display:none}header.top>div{min-width:0}header.top .mark{width:40px;height:40px}
+ .side{min-height:auto}.info{min-height:280px}
+ #callouts,#leaders{display:none}#labels{display:block}
+ .task{width:calc(100% - 28px);min-width:0;top:56px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<script type="application/json" id="model">{"slug": "rtx4090-kernels", "title": "Kernels on the RTX 4090", "brand": {"title": "Kernels on the", "accent": "RTX 4090", "tagline": "Launch · Coalesce · Tile · Decode"}, "source": {"kind": "spec", "title": "RTX 4090 / AD102 specs, CUDA C++ Programming and Best Practices Guides", "url": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/"}, "levels": [{"id": "card", "name": "RTX 4090 card", "cam": {"pos": [1, 0.95, 1.25], "target": [0, 0, 0]}, "note": "A graphics card is mostly power delivery and cooling. The GPU chip is the small silver square in the middle. Shapes and positions are simplified; labeled counts and numbers are real.", "flows": [{"label": "VRAM → GPU: 1,008 GB/s total", "from": "gddr", "to": "die", "each": true, "role": "memory", "speed": 1.1, "count": 5, "size": 1.1}, {"label": "CPU → GPU over PCIe 4.0 x16: ≈32 GB/s each way", "from": "pcie", "to": "die", "role": "io", "speed": 0.2, "count": 4, "size": 1.5}, {"label": "GPU → CPU (copy back over PCIe)", "from": "die", "to": "pcie", "role": "io", "speed": 0.2, "count": 4, "size": 1.5}], "features": [["chip", "AD102 GPU with 128 SMs enabled"], ["memory", "24 GB GDDR6X at 1,008 GB/s"], ["power", "450 W board power"]], "nums": [["GPU", "AD102 (128 of 144 SMs)"], ["VRAM", "24 GB GDDR6X"], ["Bandwidth", "1,008 GB/s"], ["Host link", "PCIe 4.0 x16"], ["Board power", "450 W"]], "callouts": [{"part": "die", "title": "GPU die", "text": "AD102. Every calculation happens here.", "side": "left"}, {"part": "gddr", "title": "VRAM", "text": "12 GDDR6X chips: 24 GB at 1,008 GB/s.", "side": "left"}, {"part": "pcie", "title": "PCIe x16", "text": "Data from the CPU, ≈32 GB/s each way.", "side": "left"}, {"part": "fins", "title": "Cooling", "text": "Vapor chamber and fins move 450 W of heat.", "side": "right"}, {"part": "vrm", "title": "Power stages", "text": "12 V in, about 1 V out at very high current.", "side": "right"}, {"part": "power", "title": "16-pin power", "text": "Most of the 450 W enters here.", "side": "right"}]}, {"id": "die", "name": "AD102 die", "parent": "card", "cam": {"pos": [0.9, 1.6, 1.2], "target": [0, 0, 0]}, "note": "The AD102 chip as a floor plan: 12 GPCs above and below a central L2 cache, 12 memory controllers on the sides. Schematic, not a die photo.", "variant": {"label": "RTX 4090 config", "note": "Off on the RTX 4090. Which units are off differs from chip to chip; this pattern is one example.", "off": ["gpc@11", "gpc@3/tpc@5", "gpc@8/tpc@5", "l2@6", "l2@7"]}, "flows": [{"label": "Memory controller → L2 → SM", "from": "mc@0", "via": ["l2@0"], "to": "gpc@0/tpc@2/sm@1", "role": "memory", "speed": 0.55, "count": 12, "size": 1.1}, {"label": "Memory controller → L2 → SM (another path)", "from": "mc@8", "via": ["l2@5"], "to": "gpc@10/tpc@3/sm@0", "role": "memory", "speed": 0.55, "count": 12, "size": 1.1}, {"label": "Coalesced warp load: 4 sectors, 128 bytes", "from": "mc@2", "via": ["l2@1"], "to": "gpc@1/tpc@2/sm@0", "role": "cache", "speed": 0.6, "count": 4, "size": 1.4}, {"label": "Strided warp load: 32 sectors, 1,024 bytes", "from": "mc@9", "via": ["l2@4"], "to": "gpc@7/tpc@2/sm@1", "role": "memory", "speed": 0.6, "count": 32, "size": 0.9}], "features": [["cluster", "12 GPCs × 12 SMs = 144 SMs"], ["cache", "96 MB L2 (72 MB enabled on RTX 4090)"], ["memory", "12 memory controllers = 384-bit bus"]], "nums": [["Transistors", "76.3 billion"], ["Area", "608.5 mm²"], ["Process", "TSMC 4N"], ["SMs", "144 (128 on RTX 4090)"], ["L2", "96 MB (72 MB on RTX 4090)"]], "callouts": [{"part": "gpc", "title": "GPC ×12", "text": "12 SMs each, plus a raster engine.", "side": "left"}, {"part": "mc", "title": "Memory controllers", "text": "12 × 32-bit links = the 384-bit bus.", "side": "left"}, {"part": "pcie_if", "title": "PCIe interface", "text": "Where data from the CPU enters.", "side": "left"}, {"part": "sm", "title": "SM ×144", "text": "Your threads run here. 128 enabled.", "side": "right"}, {"part": "l2", "title": "L2 cache", "text": "96 MB shared by all SMs.", "side": "right"}, {"part": "gigathread", "title": "GigaThread engine", "text": "Hands out blocks to SMs.", "side": "right"}]}, {"id": "sm", "name": "One SM", "parent": "die", "cam": {"pos": [0.8, 1.5, 1.2], "target": [0, 0, 0]}, "note": "One Streaming Multiprocessor: 4 partitions on top, shared L1/shared memory below. Your blocks run here, as warps of 32 threads.", "flows": [{"label": "L1 → registers → FP32 lanes", "from": "l1", "via": ["partition@2/rf@0"], "to": "partition@2/fp32@0", "role": "cache", "speed": 0.5, "count": 10, "size": 1.1}, {"label": "Registers → tensor core", "from": "partition@3/rf@0", "to": "partition@3/tensor@0", "role": "tensor", "speed": 0.6, "count": 8, "size": 1.1}, {"label": "Scheduler → dispatch → lanes", "from": "partition@2/sched@0", "via": ["partition@2/dispatch@0"], "to": "partition@2/fp32@0", "role": "control", "speed": 0.6, "count": 8, "size": 1.1}], "features": [["cluster", "4 partitions per SM"], ["compute", "128 FP32 lanes and 4 tensor cores"], ["memory", "256 KB registers, 128 KB L1/shared memory"]], "nums": [["Partitions", "4"], ["FP32 lanes", "128"], ["Tensor cores", "4 (4th gen)"], ["Registers", "256 KB"], ["L1 / shared", "128 KB"]], "callouts": [{"part": "sched", "title": "Warp scheduler", "text": "Picks a ready warp every clock.", "side": "left"}, {"part": "rf", "title": "Register file", "text": "64 KB per partition, fastest storage.", "side": "left"}, {"part": "l1", "title": "L1 / shared", "text": "128 KB shared by the whole SM.", "side": "left"}, {"part": "fp32", "title": "FP32 lanes", "text": "32 per partition, 128 per SM.", "side": "right"}, {"part": "tensor", "title": "Tensor core", "text": "Matrix math for LLMs.", "side": "right"}, {"part": "partition", "title": "Partition ×4", "text": "Each issues one warp instruction per clock.", "side": "right"}]}], "parts": [{"id": "backplate", "level": "card", "name": "Backplate", "role": "structure", "metal": 0.75, "xray": true, "shape": {"type": "rbox", "size": [31, 0.25, 12.4], "r": 0.5}, "pos": [0, -0.55, 0], "explode": [0, -5, 0], "labelAt": [13, 0, 5.5], "what": "A metal plate on the back of the board. It stiffens the card and spreads some heat.", "color": "#B3B8C1", "rough": 0.35}, {"id": "pcb", "level": "card", "name": "Circuit board (PCB)", "role": "board", "shape": {"type": "box", "size": [22, 0.16, 11]}, "pos": [-4, 0, 0], "what": "The circuit board. Its copper layers carry power and signals between every chip on the card.", "color": "#1E2622", "rough": 0.7, "print": {"text": "RTX 4090", "color": "#D9D4C7", "w": 0.25, "d": 0.08, "off": [-8, 4.6]}}, {"id": "package", "level": "card", "parent": "pcb", "name": "GPU package", "role": "structure", "color": "#3A4A3F", "shape": {"type": "rbox", "size": [5.2, 0.24, 5.2], "r": 0.2}, "pos": [-1, 0.2, 0], "explode": [0, 1.6, 0], "what": "A small circuit board (the substrate) that holds the silicon die and connects it to the main board through many tiny solder balls."}, {"id": "die", "level": "card", "parent": "package", "name": "GPU die (AD102)", "role": "compute", "color": "#C6CCD6", "metal": 0.85, "rough": 0.22, "shape": {"type": "box", "size": [2.5, 0.14, 2.45]}, "pos": [0, 0.19, 0], "explode": [0, 1.8, 0], "enter": "die", "label": true, "what": "The AD102 silicon chip: the GPU itself. Every calculation of your kernels happens here.", "why": "Everything else on the card exists to feed this chip power, data and cooling.", "nums": [["Transistors", "76.3 billion"], ["Area", "608.5 mm²"], ["Process", "TSMC 4N"], ["SMs enabled", "128 of 144"]], "print": {"text": "AD102", "color": "#3B414D", "w": 0.8, "d": 0.35}}, {"id": "gddr", "level": "card", "parent": "pcb", "name": "GDDR6X memory chip", "role": "memory", "shape": {"type": "box", "size": [1.4, 0.12, 1.2]}, "copies": [[-5.0, 0.14, -2.7], [-5.0, 0.14, -0.9], [-5.0, 0.14, 0.9], [-5.0, 0.14, 2.7], [3.0, 0.14, -2.7], [3.0, 0.14, -0.9], [3.0, 0.14, 0.9], [3.0, 0.14, 2.7], [-3.7, 0.14, -4.5], [-1.9, 0.14, -4.5], [-0.1, 0.14, -4.5], [1.7, 0.14, -4.5]], "explode": [0, 1.1, 0], "label": "VRAM chips ×12", "what": "One GDDR6X memory chip. Together the 12 chips are the card's VRAM.", "why": "Model weights and the KV cache must fit here. LLM decode speed is mostly limited by how fast these chips deliver data.", "nums": [["Per chip", "2 GB"], ["Total", "24 GB"], ["Speed per pin", "21 Gbps"], ["Total bandwidth", "1,008 GB/s"]], "color": "#26292F", "rough": 0.5, "print": {"text": "GDDR6X", "color": "#E6E1D6", "w": 0.85, "d": 0.4}}, {"id": "vrm", "level": "card", "parent": "pcb", "name": "Power stage", "role": "power", "shape": {"type": "box", "size": [0.7, 0.3, 0.9]}, "copies": {"grid": [3, 6], "step": [1.0, 1.4], "start": [5.6, 0.22, -3.6]}, "explode": [0, 0.9, 0], "what": "Power stages turn 12 V from the power cable into the low voltage and very high current the GPU needs. The count here is simplified.", "why": "Clean power at hundreds of amps keeps the GPU stable at high clocks.", "color": "#474B54", "metal": 0.4}, {"id": "power", "level": "card", "parent": "pcb", "name": "16-pin power connector", "role": "power", "shape": {"type": "box", "size": [2.0, 1.1, 0.9]}, "pos": [9.4, 0.65, -4.7], "explode": [0, 1.4, -1.6], "what": "Most of the card's power comes in here, not through the PCIe slot.", "nums": [["Card power", "450 W"]], "color": "#2C2F36"}, {"id": "pcie", "level": "card", "parent": "pcb", "name": "PCIe x16 connector", "role": "io", "shape": {"type": "box", "size": [8.9, 0.16, 0.9]}, "pos": [-6.5, 0, 5.95], "explode": [0, 0, 2.0], "what": "The edge connector that plugs into the motherboard. All data from the CPU and system RAM arrives here.", "why": "It is about 30× slower than VRAM. Copy data over once, then keep it on the GPU.", "nums": [["Link", "PCIe 4.0 x16"], ["Bandwidth", "≈32 GB/s each way"]], "color": "#C9A646", "metal": 0.9, "rough": 0.3}, {"id": "ports", "level": "card", "parent": "pcb", "name": "Display outputs", "role": "io", "shape": {"type": "box", "size": [0.9, 0.9, 7.5]}, "pos": [-10.4, 0.55, -0.5], "explode": [-1.6, 0, 0], "what": "DisplayPort and HDMI outputs that send finished frames to monitors.", "color": "#7D838E", "metal": 0.7}, {"id": "bracket", "level": "card", "name": "I/O bracket", "role": "structure", "metal": 0.8, "shape": {"type": "box", "size": [0.15, 4.4, 12.4]}, "pos": [-15.9, 1.4, 0], "explode": [-3.5, 0, 0], "what": "The metal bracket that screws the card to the PC case.", "color": "#A7ACB5"}, {"id": "vapor", "level": "card", "name": "Vapor chamber", "role": "cooling", "color": "#B87342", "metal": 0.9, "rough": 0.3, "shape": {"type": "rbox", "size": [12, 0.5, 9.5], "r": 0.3}, "pos": [-4, 0.62, 0], "explode": [0, 3.2, 0], "what": "A flat sealed chamber with a little liquid inside. The liquid boils at the hot spot and condenses at the cooler edges, which spreads the heat fast."}, {"id": "fins", "level": "card", "name": "Heatsink fins", "role": "cooling", "xray": true, "metal": 0.75, "shape": {"type": "grid", "n": [56, 1], "cell": [0.12, 2.9, 11.6], "gap": 0.42}, "pos": [0, 2.35, 0], "explode": [0, 6.5, 0], "what": "Thin metal fins. They give the heat a large surface to move into the air.", "color": "#A9AFBA", "rough": 0.35}, {"id": "shroud", "level": "card", "name": "Shroud", "role": "structure", "xray": true, "shape": {"type": "rbox", "size": [31.5, 0.45, 12.8], "r": 0.6}, "pos": [0, 4.0, 0], "explode": [0, 12, 0], "what": "The outer cover. It guides air through the fins.", "color": "#C3C7CE", "metal": 0.65, "rough": 0.3}, {"id": "fan_front", "level": "card", "name": "Front fan", "role": "cooling", "shape": {"type": "fan", "r": 4.4, "h": 0.5, "blades": 7}, "pos": [-7.5, 4.5, 0], "explode": [0, 15, 0], "what": "A fan that pushes air down through the fins.", "color": "#2B2B27"}, {"id": "fan_back", "level": "card", "name": "Back fan (flow-through)", "role": "cooling", "shape": {"type": "fan", "r": 4.4, "h": 0.5, "blades": 7}, "pos": [9, -1.0, 0], "explode": [0, -9, 0], "what": "The second fan sits where the board ends, so air flows straight through the fins and out the top (flow-through design).", "color": "#2B2B27"}, {"id": "die_base", "level": "die", "name": "AD102 floor plan (schematic)", "role": "structure", "color": "#2A2B26", "shape": {"type": "box", "size": [33, 0.4, 30]}, "pos": [0, 0, 0], "what": "A map of the main blocks on the chip. Positions are simplified; block counts are real."}, {"id": "gpc", "level": "die", "parent": "die_base", "name": "GPC", "role": "cluster", "shape": {"type": "box", "size": [4.0, 0.5, 11.2]}, "copies": {"grid": [6, 2], "step": [4.4, 13.8], "start": [-11, 0.45, -6.9]}, "explode": [0, 2.0, 0], "label": "GPC ×12", "what": "Graphics Processing Cluster: 6 TPCs (12 SMs) plus a raster engine.", "nums": [["SMs per GPC", "12"], ["GPCs on AD102", "12"], ["Enabled on RTX 4090", "11"]]}, {"id": "raster", "level": "die", "parent": "gpc", "name": "Raster engine + ROPs", "role": "control", "shape": {"type": "box", "size": [3.6, 0.3, 0.8]}, "pos": [0, 0.35, -5.0], "explode": [0, 0.6, 0], "what": "Graphics hardware that turns triangles into pixels and writes them out. Compute kernels do not use it.", "print": {"text": "RASTER + ROP", "color": "#06262B", "w": 0.8, "d": 0.8}}, {"id": "tpc", "level": "die", "parent": "gpc", "name": "TPC", "role": "cluster", "color": "#6E7690", "shape": {"type": "box", "size": [3.7, 0.16, 1.42]}, "copies": {"grid": [1, 6], "step": [0, 1.55], "start": [0, 0.32, -3.6]}, "explode": [0, 0.9, 0], "what": "Texture Processing Cluster: a pair of SMs that share some graphics hardware.", "nums": [["SMs per TPC", "2"]]}, {"id": "sm", "level": "die", "parent": "tpc", "name": "SM", "role": "compute", "shape": {"type": "box", "size": [1.65, 0.3, 1.25]}, "copies": {"grid": [2, 1], "step": [1.8, 0], "start": [-0.9, 0.22, 0]}, "explode": [0, 1.1, 0], "enter": "sm", "label": "SM", "what": "Streaming Multiprocessor: the unit that actually runs your threads. Each block of your kernel runs on one SM.", "why": "More SMs means more blocks run at once. A kernel with fewer blocks than SMs leaves SMs idle.", "nums": [["FP32 lanes", "128"], ["Tensor cores", "4"], ["Registers", "256 KB"], ["L1 / shared", "128 KB"], ["Max resident threads", "1,536"]]}, {"id": "l2", "level": "die", "parent": "die_base", "name": "L2 cache slice", "role": "cache", "shape": {"type": "box", "size": [3.05, 0.6, 2.4]}, "copies": {"grid": [8, 1], "step": [3.25, 0], "start": [-11.375, 0.55, 0]}, "explode": [0, 0.8, 0], "label": "L2 cache", "what": "One slice of the L2 cache. All SMs and all memory controllers share the L2.", "why": "Data found in L2 does not need a trip to VRAM, which saves bandwidth.", "nums": [["Total on AD102", "96 MB"], ["Enabled on RTX 4090", "72 MB"]], "print": {"text": "L2", "color": "#1C2A24", "w": 0.6, "d": 0.6}}, {"id": "mc", "level": "die", "parent": "die_base", "name": "Memory controller", "role": "memory", "shape": {"type": "box", "size": [1.3, 0.55, 3.4]}, "copies": [[-15.0, 0.5, -11.25], [-15.0, 0.5, -6.75], [-15.0, 0.5, -2.25], [-15.0, 0.5, 2.25], [-15.0, 0.5, 6.75], [-15.0, 0.5, 11.25], [15.0, 0.5, -11.25], [15.0, 0.5, -6.75], [15.0, 0.5, -2.25], [15.0, 0.5, 2.25], [15.0, 0.5, 6.75], [15.0, 0.5, 11.25]], "explode": [0, 0.8, 0], "label": "Memory controllers ×12", "what": "Each memory controller drives one 32-bit link to one GDDR6X chip.", "nums": [["Count", "12"], ["Bus width", "12 × 32 = 384 bits"]], "print": {"text": "MC", "color": "#FFFFFF", "w": 0.9, "d": 0.5, "rot": 90}}, {"id": "pcie_if", "level": "die", "parent": "die_base", "name": "PCIe interface", "role": "io", "shape": {"type": "box", "size": [8, 0.5, 1.4]}, "pos": [0, 0.5, -13.8], "explode": [0, 0.8, 0], "label": true, "what": "Where data from the CPU enters the chip.", "print": {"text": "PCIe 4.0", "color": "#17261D", "w": 0.7, "d": 0.6}}, {"id": "gigathread", "level": "die", "parent": "die_base", "name": "GigaThread engine", "role": "control", "shape": {"type": "box", "size": [7, 0.5, 1.4]}, "pos": [-7, 0.5, 13.8], "explode": [0, 0.8, 0], "label": true, "what": "The global scheduler. It hands the blocks of a kernel to SMs that have room for them.", "print": {"text": "GIGATHREAD", "color": "#06262B", "w": 0.8, "d": 0.6}}, {"id": "media", "level": "die", "parent": "die_base", "name": "Video engines", "role": "io", "shape": {"type": "box", "size": [7, 0.5, 1.4]}, "pos": [6, 0.5, 13.8], "explode": [0, 0.8, 0], "what": "Fixed-function video encoders and decoders (NVENC and NVDEC).", "print": {"text": "NVENC / NVDEC", "color": "#17261D", "w": 0.8, "d": 0.6}}, {"id": "sm_base", "level": "sm", "name": "SM floor plan (schematic)", "role": "structure", "color": "#2A2B26", "shape": {"type": "box", "size": [21, 0.3, 25]}, "pos": [0, 0, 0], "what": "One Ada SM. The real layout differs; the parts and counts match NVIDIA's published SM description."}, {"id": "l1i", "level": "sm", "parent": "sm_base", "name": "L1 instruction cache", "role": "cache", "shape": {"type": "box", "size": [19, 0.4, 1.2]}, "pos": [0, 0.35, -11.0], "explode": [0, 0.8, 0], "what": "Keeps the kernel's instructions close to the SM.", "print": {"text": "L1 INSTRUCTION CACHE", "color": "#1C2A24", "w": 0.5, "d": 0.7}}, {"id": "partition", "level": "sm", "parent": "sm_base", "name": "SM partition", "role": "cluster", "color": "#3A4470", "shape": {"type": "box", "size": [9.0, 0.24, 8.0]}, "copies": {"grid": [2, 2], "step": [9.6, 8.6], "start": [-4.8, 0.3, -5.4]}, "explode": [0, 1.2, 0], "label": "Partition ×4", "what": "One of 4 processing blocks. Each runs its own warps with its own scheduler, registers and cores.", "why": "Each partition issues one warp instruction per clock, so 4 warps can issue at the same time per SM.", "nums": [["Per SM", "4"], ["Warp schedulers", "1"], ["FP32 lanes", "32"], ["Tensor cores", "1"]]}, {"id": "l0", "name": "L0 instruction cache", "role": "cache", "shape": {"type": "box", "size": [8.4, 0.25, 0.6]}, "pos": [0, 0.25, -3.45], "explode": [0, 0.5, 0], "what": "A tiny instruction cache for this partition.", "level": "sm", "parent": "partition", "print": {"text": "L0 I-CACHE", "color": "#1C2A24", "w": 0.5, "d": 0.8}}, {"id": "sched", "name": "Warp scheduler", "role": "control", "shape": {"type": "box", "size": [4.0, 0.35, 0.8]}, "pos": [-2.15, 0.3, -2.55], "explode": [0, 0.9, 0], "label": true, "what": "Picks a warp that is ready and issues its next instruction. If a warp is waiting for memory, it picks another one.", "why": "This fast switching between warps is how a GPU hides memory latency.", "level": "sm", "parent": "partition", "print": {"text": "WARP SCHEDULER", "color": "#06262B", "w": 0.85, "d": 0.6}}, {"id": "dispatch", "name": "Dispatch unit", "role": "control", "shape": {"type": "box", "size": [4.0, 0.35, 0.8]}, "pos": [2.15, 0.3, -2.55], "explode": [0, 0.9, 0], "what": "Sends each issued instruction to the right execution units.", "level": "sm", "parent": "partition", "print": {"text": "DISPATCH", "color": "#06262B", "w": 0.7, "d": 0.6}}, {"id": "rf", "name": "Register file", "role": "memory", "shape": {"type": "box", "size": [8.4, 0.55, 1.2]}, "pos": [0, 0.4, -1.35], "explode": [0, 1.3, 0], "label": true, "what": "Each thread's private variables live here, in registers.", "why": "It is the fastest storage on the GPU. Using more registers per thread means fewer threads fit on the SM.", "nums": [["Per partition", "64 KB"], ["Per SM", "256 KB"], ["Max per thread", "255 registers"]], "level": "sm", "parent": "partition", "print": {"text": "REGISTER FILE · 64 KB", "color": "#FFFFFF", "w": 0.7, "d": 0.6}}, {"id": "fp32", "name": "FP32 lanes ×16", "role": "compute", "shape": {"type": "grid", "n": [4, 4], "cell": [0.72, 0.35, 0.55], "gap": 0.14}, "pos": [-2.55, 0.3, 1.0], "explode": [0, 1.6, 0], "label": "FP32 lanes", "what": "16 lanes for 32-bit floating-point math (FP32).", "level": "sm", "parent": "partition"}, {"id": "fpint", "name": "FP32/INT32 lanes ×16", "role": "compute", "color": "#C98E52", "shape": {"type": "grid", "n": [4, 4], "cell": [0.72, 0.35, 0.55], "gap": 0.14}, "pos": [1.0, 0.3, 1.0], "explode": [0, 1.6, 0], "what": "16 lanes that do either FP32 or 32-bit integer (INT32) math.", "level": "sm", "parent": "partition"}, {"id": "tensor", "name": "Tensor core (4th gen)", "role": "tensor", "shape": {"type": "box", "size": [1.3, 0.65, 2.62]}, "pos": [3.65, 0.45, 1.0], "explode": [0, 2.0, 0], "label": "Tensor core", "what": "A matrix-multiply engine. One instruction computes a small matrix tile in FP16, BF16, FP8 or other formats.", "why": "LLM math is mostly matrix multiplies, so most of the FLOPs come from here.", "level": "sm", "parent": "partition", "print": {"text": "TENSOR", "color": "#FFFFFF", "w": 0.85, "d": 0.7, "rot": 90}}, {"id": "ldst", "name": "Load/store units", "role": "memory", "color": "#7E72D6", "shape": {"type": "grid", "n": [4, 1], "cell": [0.72, 0.3, 0.5], "gap": 0.14}, "pos": [-2.55, 0.3, 3.2], "explode": [0, 1.0, 0], "what": "They compute memory addresses and move data between registers and memory.", "level": "sm", "parent": "partition"}, {"id": "sfu", "name": "Special function unit", "role": "compute", "color": "#B07A45", "shape": {"type": "box", "size": [3.3, 0.3, 0.5]}, "pos": [1.0, 0.3, 3.2], "explode": [0, 1.0, 0], "what": "Computes sine, cosine, reciprocal, square root and similar functions.", "level": "sm", "parent": "partition", "print": {"text": "SFU", "color": "#FFFFFF", "w": 0.4, "d": 0.8}}, {"id": "l1", "level": "sm", "parent": "sm_base", "name": "L1 data cache / shared memory", "role": "cache", "shape": {"type": "box", "size": [19, 0.55, 2.4]}, "pos": [0, 0.4, 9.2], "explode": [0, 1.0, 0], "label": "L1 / shared memory", "what": "One block of on-chip storage per SM, split between L1 data cache and shared memory.", "why": "Shared memory lets the threads of one block reuse data without going to VRAM. Tiled matrix multiply depends on it.", "nums": [["Size", "128 KB"], ["Max as shared memory", "100 KB"]], "print": {"text": "L1 DATA / SHARED MEMORY · 128 KB", "color": "#1C2A24", "w": 0.6, "d": 0.6}}, {"id": "tex", "level": "sm", "parent": "sm_base", "name": "Texture units ×4", "role": "compute", "color": "#8F7A62", "shape": {"type": "grid", "n": [4, 1], "cell": [2.3, 0.4, 1.0], "gap": 0.5}, "pos": [-3.0, 0.3, 11.5], "explode": [0, 0.7, 0], "what": "Sample and filter images for graphics. Compute kernels rarely use them."}, {"id": "rt", "level": "sm", "parent": "sm_base", "name": "RT core (3rd gen)", "role": "compute", "color": "#A86D8F", "shape": {"type": "box", "size": [5.0, 0.6, 1.0]}, "pos": [6.2, 0.4, 11.5], "explode": [0, 0.7, 0], "what": "Hardware for ray-tracing tests. Normal compute kernels do not use it.", "print": {"text": "RT CORE", "color": "#FFFFFF", "w": 0.6, "d": 0.7}}], "lessons": [{"id": "meet", "title": "Meet the card", "level": "card", "explode": 0, "thumb": {"explode": 0.6}, "missions": [{"title": "Pull it apart", "text": "Drag Explode to the right and pull the card apart.", "hint": "The Explode slider is in the toolbar at the bottom of the 3D view.", "check": {"on": "explode", "gte": 0.6}, "reward": "Most of the card is cooling and power. The GPU die is the small silver square in the middle. Every kernel you write runs on it."}, {"title": "Find the 24 GB", "text": "Your model weights live in VRAM. Find a VRAM chip and click it.", "hint": "Look for the 12 dark chips around the GPU die.", "check": {"on": "select", "part": "gddr"}, "reward": "12 GDDR6X chips × 2 GB = 24 GB. Each chip has its own 32-bit link, so all 12 work at once: a 384-bit memory bus."}, {"title": "Find the die", "text": "Find the chip that does the math and click it.", "check": {"on": "select", "part": "die"}, "reward": "AD102: 76.3 billion transistors on 608.5 mm². The RTX 4090 enables 128 of its 144 SMs."}, {"title": "Feel the bandwidth", "text": "Turn on Flow. Compare the VRAM streams with the PCIe stream.", "check": {"on": "flow"}, "reward": "VRAM feeds the die at 1,008 GB/s. PCIe brings data from the CPU at about 32 GB/s, roughly 30× slower. Keep data in VRAM; most kernels wait on memory, not math."}]}, {"id": "launch", "title": "A kernel launch", "level": "die", "explode": 0.25, "thumb": {"level": "die", "explode": 0.6}, "missions": [{"title": "Run it", "text": "Press ▶ in Try it yourself. Watch the SMs and the highlighted index line.", "hint": "The orange play button is above the code.", "check": {"on": "run"}, "reward": "65,536 blocks, but only 128 SMs. Up to 6 blocks of 256 threads fit on one SM (1,536 threads), so about 768 blocks run at once. The rest wait their turn."}, {"title": "Who hands out blocks?", "text": "One part gives blocks to SMs that have room. Find it.", "hint": "It sits at the edge of the chip, opposite the PCIe interface.", "check": {"on": "select", "part": "gigathread"}, "reward": "The GigaThread engine is the chip-wide scheduler. Blocks run in no fixed order, so your kernel must not depend on one block finishing before another."}, {"title": "Your 128 SMs", "text": "Turn on RTX 4090 config. Which SMs never get a block?", "check": {"on": "variant"}, "reward": "One whole GPC and one TPC in two other GPCs are off: 16 SMs. Your launch uses the 128 that remain."}], "code": "__global__ void scale(const float* x, float* y, int n) {\n  int i = blockIdx.x * blockDim.x + threadIdx.x;\n  if (i < n) y[i] = 2.0f * x[i];\n}\n\n// n = 1 << 24 = 16,777,216 floats\n// 65,536 blocks of 256 threads:\nscale<<<n / 256, 256>>>(x, y, n);", "sim": [{"at": 0, "enter": "die"}, {"at": 0.3, "line": 8, "log": "Launch: a grid of 65,536 blocks, 256 threads each.", "glow": ["gigathread"]}, {"at": 1.2, "log": "The GigaThread engine hands blocks to SMs with free room.", "pulse": {"part": "sm", "secs": 5.0, "rate": 0.9}, "flow": [0, true]}, {"at": 1.21, "flow": [1, true]}, {"at": 2.4, "line": 2, "log": "Each thread builds its own index: block 3, thread 5 → i = 3 × 256 + 5 = 773."}, {"at": 3.8, "line": 3, "log": "Thread 773 reads x[773] through L2 from VRAM and writes y[773]."}, {"at": 6.2, "unglow": true, "flow": [0, false], "log": "Up to 6 blocks of 256 per SM × 128 SMs ≈ 768 blocks at once, about 85 waves. Timing not to scale."}, {"at": 6.21, "flow": [1, false]}]}, {"id": "coalesce", "title": "Coalesced or strided", "level": "die", "explode": 0.3, "thumb": {"level": "die", "explode": 0.3}, "missions": [{"title": "Run it", "text": "Press ▶. Count the particles for the good copy and for the bad copy.", "hint": "The orange play button is above the code.", "check": {"on": "run"}, "reward": "Coalesced: 32 threads read 32 neighbour floats, 128 bytes in 4 sectors of 32 bytes. Strided: each thread pulls its own sector, 32 sectors and 1,024 bytes for the same 128 useful bytes."}, {"title": "Compare the roads", "text": "Turn on Flow. Find the thin stream and the crowded stream.", "check": {"on": "flow"}, "reward": "The crowded stream is the strided load. It moves 8× the bytes, and only 12.5% of them are used. At 1,008 GB/s peak, the bad copy gets about 126 GB/s of useful data."}, {"title": "Where sectors start", "text": "The sectors come from VRAM through one kind of part on the die edge. Find it.", "hint": "12 of them line the left and right sides.", "check": {"on": "select", "part": "mc"}, "reward": "12 memory controllers, one 32-bit link each to a GDDR6X chip. Wasted sectors use their time just like useful ones."}], "code": "__global__ void copy_good(const float* in, float* out) {\n  int i = blockIdx.x * blockDim.x + threadIdx.x;\n  out[i] = in[i];        // stride 1\n}\n\n__global__ void copy_bad(const float* in, float* out) {\n  int i = blockIdx.x * blockDim.x + threadIdx.x;\n  out[i] = in[i * 32];   // stride 32\n}", "sim": [{"at": 0, "enter": "die"}, {"at": 0.3, "line": 3, "log": "copy_good: one warp reads in[0..31], 32 × 4 bytes = 128 bytes.", "flow": [2, true], "glow": ["mc@2", "l2@1"]}, {"at": 2.0, "log": "The hardware coalesces them into 4 sectors of 32 bytes."}, {"at": 3.4, "line": 8, "log": "copy_bad: one warp reads in[0], in[32], in[64] … each in its own sector.", "unglow": true, "flow": [2, false], "glow": ["mc@9", "l2@4"]}, {"at": 3.41, "flow": [3, true]}, {"at": 5.2, "log": "32 sectors, 1,024 bytes moved, 4 useful bytes in each 32."}, {"at": 7.0, "unglow": true, "flow": [3, false], "log": "Strided = 8× the traffic, 12.5% useful. Peak 1,008 GB/s → about 126 GB/s useful. Not to scale."}]}, {"id": "tile", "title": "Tiled matmul", "level": "die", "explode": 0.4, "thumb": {"level": "sm", "explode": 0.5}, "missions": [{"title": "Open an SM", "text": "Go inside one SM. Double-click a small orange block inside a GPC.", "hint": "Explode the die first so the SMs lift off their TPCs.", "check": {"on": "enter", "level": "sm"}, "reward": "One SM: 4 partitions, each with a warp scheduler, a 64 KB register file and 32 FP32 lanes. One 128 KB L1 / shared memory sits below them."}, {"title": "Find the workbench", "text": "A tile goes where all threads of one block can read it. Find that memory.", "check": {"on": "select", "part": "l1"}, "reward": "Shared memory and L1 are the same 128 KB per SM. A block can use up to 100 KB as shared memory on this GPU. Two 16 × 16 float tiles need only 2 KB."}, {"title": "Run it", "text": "Press ▶. Watch the load, the barrier, then the math.", "hint": "The orange play button is above the code.", "check": {"on": "run"}, "reward": "Each value of A and B comes from VRAM once per tile and is then read 16 times from shared memory. VRAM traffic drops 16× against the naive kernel. __syncthreads() stops threads from reading a half-loaded tile."}], "code": "__shared__ float As[16][16], Bs[16][16]; // 2 KB\nfor (int t = 0; t < N / 16; ++t) {\n  As[ty][tx] = A[row*N + t*16 + tx];\n  Bs[ty][tx] = B[(t*16 + ty)*N + col];\n  __syncthreads();         // tile complete\n  for (int k = 0; k < 16; ++k)\n    sum += As[ty][k] * Bs[k][tx];\n  __syncthreads();         // done with tile\n}\nC[row*N + col] = sum;", "sim": [{"at": 0, "enter": "sm"}, {"at": 0.4, "line": 1, "log": "The block reserves two 16 × 16 tiles in shared memory: 2 KB.", "glow": ["l1"]}, {"at": 1.6, "line": 3, "log": "Each of the 256 threads loads one A value and one B value from VRAM.", "unglow": true, "glow": ["partition@0/ldst@0", "partition@1/ldst@0", "partition@2/ldst@0", "partition@3/ldst@0", "l1"]}, {"at": 2.8, "line": 5, "log": "__syncthreads(): every warp waits until the whole tile is in.", "unglow": true, "glow": ["partition@0/sched@0", "partition@1/sched@0", "partition@2/sched@0", "partition@3/sched@0"]}, {"at": 4.0, "line": 7, "log": "16 multiply-adds per thread, all from shared memory.", "unglow": true, "flow": [0, true], "glow": ["partition@2/fp32@0", "partition@2/fpint@0", "l1"]}, {"at": 5.6, "line": 8, "log": "Barrier again, so no thread overwrites a tile still in use.", "unglow": true, "flow": [0, false], "glow": ["partition@2/sched@0"]}, {"at": 6.8, "unglow": true, "line": 10, "log": "Each loaded value is reused 16 times: 16× less VRAM traffic than naive. Timing not to scale."}]}, {"id": "decode", "title": "One decode token", "level": "card", "explode": 0.35, "thumb": {"level": "card", "explode": 0.35}, "missions": [{"title": "Run it", "text": "Press ▶. Watch the weights leave VRAM for one new token.", "hint": "The orange play button is above the code.", "check": {"on": "run"}, "reward": "Rough, not to scale: a 1.7B model at int8 is about 1.7 GB. Every token reads all of it. 1,008 GB/s ÷ 1.7 GB ≈ 590 tokens/s at best. Real runs are lower."}, {"title": "Where weights wait", "text": "Find where the weights sit between tokens and click it.", "check": {"on": "select", "part": "gddr"}, "reward": "In VRAM. The 72 MB L2 is far too small for 1.7 GB, so the weights stream in again for every token. Decode is memory-bound: bandwidth sets tokens per second."}, {"title": "The slow road", "text": "If the weights did not fit, they would come from system RAM. Find that road.", "hint": "The gold edge at the bottom of the board.", "check": {"on": "select", "part": "pcie"}, "reward": "Rough, not to scale: 1.7 GB ÷ 32 GB/s ≈ 53 ms per token, about 19 tokens/s. That is why offloaded layers slow a model so much."}], "code": "// one decode step = one token\n// 1.7B weights × 1 byte (int8) ≈ 1.7 GB\nfor (layer in model.layers) {\n  x = layer.attention(x, kv_cache); // + KV cache\n  x = layer.mlp(x);\n}\ntoken = sample(lm_head(x));\n// every weight leaves VRAM once per token", "sim": [{"at": 0, "enter": "card"}, {"at": 0.3, "line": 1, "log": "Decode: the model makes one new token.", "glow": ["die"]}, {"at": 1.2, "line": 4, "log": "Attention reads this layer's weights and the KV cache from VRAM.", "flow": [0, true], "glow": ["gddr"]}, {"at": 2.8, "line": 5, "log": "The MLP reads this layer's weights. The math per byte is tiny."}, {"at": 4.2, "line": 7, "log": "All layers done. About 1.7 GB crossed the memory bus for one token."}, {"at": 5.6, "unglow": true, "flow": [0, false], "line": 8, "log": "Rough, not to scale: 1.7 GB ÷ 1,008 GB/s ≈ 1.7 ms → at most ≈ 590 tokens/s. FP16 (3.4 GB) → ≈ 300."}]}], "glossary": [{"id": "gpu-die", "term": "GPU die", "short": "The piece of silicon where the GPU's transistors are. It sits on a package soldered to the board.", "aliases": ["die", "dies"], "analogy": "The engine block of a car.", "related": ["ad102", "sm"]}, {"id": "ad102", "term": "AD102", "short": "The full chip used in the RTX 4090: 144 SMs, 96 MB L2, 384-bit memory bus.", "exact": true, "why": "The RTX 4090 uses a cut-down AD102.", "related": ["gpu-die", "sm"]}, {"id": "vram", "term": "VRAM", "short": "The GPU's own memory chips on the card. On the RTX 4090: 24 GB of GDDR6X.", "aliases": ["GDDR6X", "GDDR6X memory"], "exact": true, "analogy": "The kitchen pantry: big and close, but still a walk away from the stove.", "why": "Model weights must fit here, and its bandwidth limits LLM decode speed.", "related": ["memory-controller", "bandwidth"]}, {"id": "bandwidth", "term": "Bandwidth", "short": "How many bytes per second a link can move.", "analogy": "Lanes on a highway.", "related": ["vram", "pcie"]}, {"id": "memory-bus", "term": "Memory bus", "short": "All the data wires between the GPU and its memory chips. Wider bus = more bytes per transfer.", "aliases": ["384-bit memory bus", "384-bit bus", "bus"], "related": ["memory-controller", "vram"]}, {"id": "memory-controller", "term": "Memory controller", "short": "Logic on the GPU die that runs one memory channel: it sends addresses and moves data to and from one VRAM chip.", "aliases": ["memory controllers"], "related": ["vram", "l2"]}, {"id": "pcie", "term": "PCIe", "short": "The link between the motherboard and the graphics card. CPU-to-GPU copies travel over it.", "aliases": ["PCIe 4.0 x16", "PCIe slot"], "exact": true, "analogy": "A narrow bridge between two cities.", "why": "It is far slower than VRAM, so copies can dominate run time.", "related": ["vram", "bandwidth"]}, {"id": "vrm", "term": "VRM", "short": "Voltage regulator module: circuits that convert 12 V into the ~1 V, very high current the GPU uses.", "aliases": ["power stages", "power stage"], "exact": true}, {"id": "vapor-chamber", "term": "Vapor chamber", "short": "A sealed flat chamber where liquid boils at the hot spot and condenses at the edges, moving heat fast.", "related": ["heatsink"]}, {"id": "heatsink", "term": "Heatsink", "short": "Metal with a large surface area that passes heat into the air.", "aliases": ["fins", "heatsink fins"], "related": ["vapor-chamber"]}, {"id": "gpc", "term": "GPC", "short": "Graphics Processing Cluster: a big group of SMs (12 on AD102) with shared graphics hardware.", "aliases": ["GPCs"], "exact": true, "related": ["tpc", "sm"]}, {"id": "tpc", "term": "TPC", "short": "Texture Processing Cluster: two SMs grouped together.", "aliases": ["TPCs"], "exact": true, "related": ["gpc", "sm"]}, {"id": "sm", "term": "SM", "short": "Streaming Multiprocessor: the GPU's basic processor. It runs blocks of threads as warps.", "aliases": ["SMs", "streaming multiprocessor", "Streaming Multiprocessor"], "exact": true, "analogy": "A factory floor with 4 work cells.", "why": "The RTX 4090 has 128 of them; your kernel needs enough blocks to keep them all busy.", "related": ["warp", "partition", "block"], "more": "https://modal.com/gpu-glossary"}, {"id": "partition", "term": "Partition", "short": "One quarter of an SM, with its own warp scheduler, registers and execution lanes.", "aliases": ["partitions", "processing block"], "related": ["sm", "warp-scheduler"]}, {"id": "warp", "term": "Warp", "short": "A group of 32 threads that the SM schedules together and issues one instruction to at a time.", "aliases": ["warps"], "analogy": "A rowing crew of 32 that moves on one drumbeat.", "related": ["thread", "warp-scheduler"]}, {"id": "warp-scheduler", "term": "Warp scheduler", "short": "Hardware that picks a ready warp each clock and issues its next instruction.", "aliases": ["scheduler"], "analogy": "A foreman who always gives work to whoever is ready.", "why": "Switching warps while others wait for memory hides latency.", "related": ["warp", "partition"]}, {"id": "thread", "term": "Thread", "short": "One instance of your kernel code, working on its own piece of data.", "aliases": ["threads"], "related": ["warp", "block"]}, {"id": "block", "term": "Block", "short": "A group of threads (up to 1,024) that runs on one SM and can share its shared memory.", "aliases": ["blocks", "thread block"], "related": ["sm", "shared-memory"]}, {"id": "kernel", "term": "Kernel", "short": "A function you launch on the GPU. Many threads run it at once.", "aliases": ["kernels"], "related": ["thread", "block"]}, {"id": "register-file", "term": "Register file", "short": "The SM's fastest storage. Each thread gets its own registers for its private variables.", "aliases": ["registers", "register"], "analogy": "The worker's own hands: instant, but tiny.", "why": "More registers per thread means fewer threads fit on one SM.", "related": ["thread", "shared-memory"]}, {"id": "shared-memory", "term": "Shared memory", "short": "Fast on-chip memory inside each SM. Threads of one block use it to share data.", "aliases": ["L1", "L1 data cache", "L1/shared memory"], "analogy": "A shared workbench for one team.", "why": "Reusing data here avoids slow trips to VRAM.", "related": ["block", "l2", "register-file"], "exact": true}, {"id": "l2", "term": "L2 cache", "short": "A large cache on the die shared by all SMs and memory controllers.", "aliases": ["L2", "L2 slices", "L2 slice"], "exact": true, "analogy": "A warehouse inside the factory gates.", "related": ["shared-memory", "vram"]}, {"id": "fp32", "term": "FP32", "short": "32-bit floating-point numbers, and the lanes that compute with them.", "aliases": ["FP32 lanes", "32-bit floating-point"], "exact": true, "related": ["int32", "tensor-core"]}, {"id": "int32", "term": "INT32", "short": "32-bit integer math, used for indices, addresses and counters.", "aliases": ["32-bit integer"], "exact": true, "related": ["fp32"]}, {"id": "tensor-core", "term": "Tensor core", "short": "A unit that multiplies small matrix tiles in one instruction, in low-precision formats like FP16, BF16 and FP8.", "aliases": ["tensor cores"], "analogy": "A stamp that does a whole block of multiplications in one press.", "why": "Most LLM FLOPs run here.", "related": ["fp32", "sm"]}, {"id": "ldst", "term": "Load/store unit", "short": "Units that compute addresses and move data between registers and memory.", "aliases": ["load/store units", "LD/ST"], "related": ["register-file", "shared-memory"]}, {"id": "sfu", "term": "SFU", "short": "Special function unit: computes sine, cosine, reciprocal, square root and similar.", "aliases": ["special function unit"], "exact": true, "related": ["fp32"]}, {"id": "rt-core", "term": "RT core", "short": "Hardware for ray-tracing intersection tests.", "why": "Compute kernels do not use it.", "related": ["sm"]}, {"id": "gigathread", "term": "GigaThread engine", "short": "The chip-wide scheduler that assigns blocks of a kernel to SMs.", "related": ["block", "sm"]}, {"id": "flops", "term": "FLOPs", "short": "Floating-point operations (FLOPs), or operations per second (FLOP/s).", "aliases": ["FLOP/s"], "exact": true, "related": ["tensor-core"]}, {"id": "kv-cache", "term": "KV cache", "short": "Stored attention keys and values for past tokens, so an LLM does not recompute them for every new token.", "why": "It grows with context length and eats VRAM.", "related": ["vram"]}, {"id": "latency", "term": "Latency", "short": "The waiting time between asking for data and getting it.", "related": ["warp-scheduler", "bandwidth"]}, {"id": "gpu", "term": "GPU", "aliases": ["GPUs"], "exact": true, "short": "Graphics processing unit: a chip with thousands of simple lanes that run the same work on lots of data at once.", "related": ["sm", "vram"]}, {"id": "cpu", "term": "CPU", "exact": true, "short": "The main processor of the PC. A few fast cores, each good at one task at a time.", "related": ["pcie", "ram"]}, {"id": "ram", "term": "RAM", "aliases": ["system RAM"], "exact": true, "short": "The PC's main memory, used by the CPU. The GPU reaches it only through PCIe.", "related": ["cpu", "pcie"]}, {"id": "llm", "term": "LLM", "exact": true, "short": "Large language model, such as the models you run for chat or code.", "related": ["kv-cache", "tensor-core"]}, {"id": "low-precision", "term": "Low-precision formats", "aliases": ["FP16", "BF16", "FP8"], "exact": true, "short": "Number formats with fewer bits than FP32 (16 or 8 bits). Less precise, but faster and smaller.", "why": "Tensor cores do far more math per second in these formats.", "related": ["tensor-core", "fp32"]}, {"id": "grid", "term": "Grid", "aliases": ["grids"], "short": "All the blocks of one kernel launch. Its size is the first number inside <<< >>>.", "related": ["block", "kernel-launch"]}, {"id": "kernel-launch", "term": "Kernel launch", "aliases": ["launch", "launches"], "short": "Starting a kernel on the GPU with kernel<<<blocks, threads>>>(args). The CPU does not wait for it to finish.", "related": ["grid", "kernel"]}, {"id": "thread-index", "term": "Thread index", "aliases": ["index", "threadIdx", "blockIdx", "blockDim"], "exact": false, "short": "Built-in values that tell a thread who it is: blockIdx (its block), threadIdx (its place in the block), blockDim (block size).", "related": ["thread", "block"]}, {"id": "wave", "term": "Wave", "aliases": ["waves"], "short": "One round of blocks that fill all SMs at the same time. Big grids run in many waves.", "related": ["block", "sm"]}, {"id": "coalescing", "term": "Coalescing", "aliases": ["coalesced", "coalesces", "coalesce"], "short": "When the 32 threads of a warp read neighbouring addresses, the hardware merges their reads into a few 32-byte sectors.", "analogy": "One delivery truck for a whole street, not one per house.", "why": "It is the first thing to fix in a slow memory-bound kernel.", "related": ["sector", "stride", "warp"], "more": "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/"}, {"id": "sector", "term": "Sector", "aliases": ["sectors"], "short": "The 32-byte unit that memory moves on modern NVIDIA GPUs. A read of 4 bytes still moves a full 32-byte sector.", "related": ["coalescing", "l2"]}, {"id": "stride", "term": "Stride", "aliases": ["strided"], "short": "The distance between the addresses that neighbour threads read. Stride 1 is coalesced; large strides waste most of each sector.", "related": ["coalescing", "sector"]}, {"id": "tile", "term": "Tile", "aliases": ["tiles", "tiled", "tiling"], "short": "A small square piece of a matrix that a block copies into shared memory and reuses many times.", "analogy": "Bring one box of parts to the workbench, use every part, then fetch the next box.", "related": ["shared-memory", "matmul"]}, {"id": "syncthreads", "term": "__syncthreads()", "aliases": ["__syncthreads", "barrier"], "exact": true, "short": "A barrier: every thread of the block waits here until all of them arrive.", "why": "Without it, a thread can read a tile before its neighbours finish writing it.", "related": ["block", "tile"]}, {"id": "matmul", "term": "Matmul", "aliases": ["matrix multiply", "matrix multiplication"], "short": "Matrix multiplication, C = A × B. The core math of neural networks.", "related": ["tile", "tensor-core"]}, {"id": "decode", "term": "Decode", "aliases": ["decode step"], "short": "The phase where an LLM makes its answer one token at a time. Each step reads all the weights.", "related": ["token", "memory-bound"]}, {"id": "token", "term": "Token", "aliases": ["tokens", "tokens/s", "tokens per second"], "short": "A piece of text (often part of a word) that an LLM reads or writes in one step.", "related": ["decode", "llm"]}, {"id": "weights", "term": "Weights", "aliases": ["weight", "parameters"], "short": "The learned numbers of a model. A 1.7B model has about 1.7 billion of them.", "related": ["int8", "vram"]}, {"id": "int8", "term": "int8", "aliases": ["INT8"], "exact": true, "short": "8-bit integer numbers: 1 byte per weight, half of FP16.", "why": "Half the bytes per token means up to twice the decode speed on a memory-bound GPU.", "related": ["quantization", "weights"]}, {"id": "quantization", "term": "Quantization", "aliases": ["quantized"], "short": "Storing weights in fewer bits (int8, FP8, 4-bit) to save memory and bandwidth, at a small cost in accuracy.", "related": ["int8", "weights"]}, {"id": "memory-bound", "term": "Memory-bound", "aliases": ["memory bound"], "short": "A kernel whose speed is set by how fast bytes arrive, not by how fast the GPU does math.", "related": ["arithmetic-intensity", "roofline", "bandwidth"]}, {"id": "arithmetic-intensity", "term": "Arithmetic intensity", "short": "FLOPs done per byte moved. Low intensity means memory-bound; high means compute-bound.", "related": ["roofline", "memory-bound"]}, {"id": "roofline", "term": "Roofline", "short": "A chart of speed against arithmetic intensity. It shows if bandwidth or peak math limits a kernel.", "related": ["arithmetic-intensity"], "more": "https://doi.org/10.1145/1498765.1498785"}, {"id": "mlp", "term": "MLP", "exact": true, "short": "The feed-forward part of each transformer layer: two or three big matmuls with a nonlinear step between.", "related": ["matmul", "decode"]}, {"id": "attention", "term": "Attention", "short": "The part of each layer that lets a new token look back at all earlier tokens through the KV cache.", "related": ["kv-cache", "decode"]}, {"id": "offload", "term": "Offloading", "aliases": ["offloaded"], "short": "Keeping some layers in system RAM when VRAM is full. Their weights then cross PCIe on every token.", "related": ["pcie", "vram"]}]}</script>
+<div class="app">
+  <nav class="rail" aria-label="Main">
+    <button type="button" data-rail="home" data-icon="home" aria-current="true">Explore</button>
+    <button type="button" data-rail="lessons" data-icon="book">Lessons</button>
+    <button type="button" data-rail="parts" data-icon="list">Parts</button>
+    <button type="button" data-rail="terms" data-icon="terms">Terms</button>
+    <button type="button" data-rail="theme" data-icon="theme">Theme</button>
+  </nav>
+  <header class="top">
+    <svg class="mark" viewBox="0 0 54 54" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M27 6l19 11v20L27 48 8 37V17z"/><path d="M27 6v20M8 17l19 9 19-9M27 26v22"/><path d="M17 30.5l5 2.8M17 35.5l5 2.8M32 33.3l5-2.8M32 38.3l5-2.8" stroke-width="2"/></svg>
+    <div><h1 id="brand-title"></h1><p id="brand-tag"></p></div>
+    <svg class="trace" viewBox="0 0 420 72" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M0 52h70l18-18h64l14 14h80l20-20h90l16 16h48"/><path d="M110 70V52l10-10h60M300 8v14l12 12h40"/><circle cx="88" cy="34" r="4"/><circle cx="246" cy="48" r="4"/><circle cx="356" cy="28" r="4"/><circle cx="300" cy="8" r="3"/></svg>
+  </header>
+  <div class="prog" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/></svg>
+    <div class="pg"><b>LESSONS</b><div class="bar"><i id="pbar"></i></div></div><div><div class="pn" id="pnum">0/0</div><small id="psteps"></small></div></div>
+  <main class="stage" id="stage">
+    <svg id="leaders" aria-hidden="true"></svg><div id="callouts"></div><div id="labels"></div>
+    <nav class="crumbs" id="crumbs" aria-label="Zoom levels"></nav>
+    <div class="task" id="task" hidden></div>
+    <div class="legend" id="legend"></div><div id="tip"></div><div id="fade"></div>
+    <div class="toolbar" id="toolbar">
+      <button type="button" data-t="rotl" data-icon="rotl" aria-label="Rotate left"></button><button type="button" data-t="rotr" data-icon="rotr" aria-label="Rotate right"></button>
+      <span class="sep"></span><button type="button" data-t="zout" data-icon="minus" aria-label="Zoom out"></button><button type="button" data-t="zin" data-icon="plus" aria-label="Zoom in"></button>
+      <span class="sep"></span><label>Explode <input type="range" id="t-explode" min="0" max="1" step="0.01" value="0"></label><label>Cut <input type="range" id="t-cut" min="0" max="1" step="0.01" value="0"></label>
+      <span class="sep"></span><button type="button" data-t="xray" data-icon="xray" aria-pressed="false" aria-label="X-ray"></button><button type="button" data-t="flow" data-icon="flow" aria-pressed="false" aria-label="Show data flow"></button>
+      <button type="button" data-t="callouts" data-icon="callouts" aria-pressed="true" aria-label="Callouts"></button><button type="button" data-t="isolate" data-icon="isolate" aria-pressed="false" aria-label="Isolate selection"></button>
+      <button type="button" data-t="variant" aria-pressed="false" hidden></button><span class="sep"></span><button type="button" data-t="reset" data-icon="reset" aria-label="Reset view"></button>
+    </div>
+  </main>
+  <div class="side">
+    <section class="panel info"><nav class="tabs" role="tablist"><button data-tab="overview" aria-selected="true">Overview</button><button data-tab="specs">Specs</button><button data-tab="inside">Inside</button></nav><div class="pbody" id="pbody"></div></section>
+    <section class="panel codep" id="codep" hidden><div class="ph"><b>TRY IT YOURSELF</b><div><button type="button" id="copy" data-icon="copy" aria-label="Copy code"></button><button type="button" id="run" data-icon="play" aria-label="Run"></button></div></div>
+      <pre id="src"></pre><div class="mon"><b>MONITOR</b><div id="log"></div></div></section>
+  </div>
+  <section class="lessons" id="lessons"><h3>LESSONS</h3><div class="strip" id="strip"></div></section>
+</div>
+<div id="pop" role="tooltip"></div>
+<dialog id="gloss" aria-label="All terms"><div class="dlg-h"><input id="gloss-q" type="search" placeholder="Search terms"><button type="button" data-close>Close</button></div><ul class="dlist" id="gloss-list"></ul></dialog>
+<dialog id="parts" aria-label="Parts at this level"><div class="dlg-h"><b style="flex:1;padding:4px">Parts at this level</b><button type="button" data-close>Close</button></div><ul class="dlist" id="parts-list"></ul></dialog>
+<script>
+/* engine.js: renders a device model and exposes an API to ui.js. Do not edit per lesson. */
+function startEngine(M, UI) {
+  const T = THREE, $ = UI.$, stage = $('#stage'), V = () => new T.Vector3(), col = h => new T.Color(h).convertSRGBToLinear();
+  const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const R = new T.WebGLRenderer({ antialias: true, alpha: true });
+  R.setPixelRatio(Math.min(devicePixelRatio, 2)); R.outputEncoding = T.sRGBEncoding; R.toneMapping = T.ACESFilmicToneMapping; R.toneMappingExposure = 1.0;
+  R.localClippingEnabled = true; R.shadowMap.enabled = true; R.shadowMap.type = T.PCFSoftShadowMap; stage.prepend(R.domElement);
+  const scene = new T.Scene();
+  scene.add(new T.HemisphereLight(0xffffff, 0xcdc3ad, 0.85));
+  const key = new T.DirectionalLight(0xfff2df, 1.15); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0005; key.shadow.normalBias = 0.03; scene.add(key, key.target);
+  const fill = new T.DirectionalLight(0xe2eaff, 0.4); fill.position.set(-30, 18, -24); scene.add(fill);
+  const ground = new T.Mesh(new T.PlaneGeometry(1, 1), new T.ShadowMaterial({ opacity: 0.17 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const grid = new T.GridHelper(1, 28); grid.material.vertexColors = false; grid.material.transparent = true; grid.material.opacity = 0.07; scene.add(grid);
+  const retheme = () => grid.material.color.set(cssv('--ink') || '#1d2230'); retheme();
+  const cam = new T.OrthographicCamera(-1, 1, 1, -1, -3000, 6000), ctl = new T.OrbitControls(cam, R.domElement);
+  ctl.enableDamping = true; ctl.dampingFactor = 0.1; ctl.screenSpacePanning = true; ctl.minZoom = 0.35; ctl.maxZoom = 9; ctl.maxPolarAngle = 1.5;
+  let half = 10, tween = null;
+  const frustum = () => { const a = stage.clientWidth / Math.max(1, stage.clientHeight); cam.left = -half * a; cam.right = half * a; cam.top = half; cam.bottom = -half; cam.updateProjectionMatrix(); };
+  const clip = new T.Plane(new T.Vector3(-1, 0, 0), 1e4);
+  const S = { explode: 0, cut: 0, xray: false, flow: false, callouts: true, variant: false, isolate: false };
+  const LV = {}; let cur = null, sel = null, selSet = null, hover = null, ex = 0;
+  M.levels.forEach(d => { const root = new T.Group(); root.visible = false; scene.add(root); LV[d.id] = { d, root, insts: [], flows: [] }; });
+  const spots = p => { const c = p.copies; if (!c) return [p.pos || [0, 0, 0]]; if (Array.isArray(c)) return c;
+    const o = [], s = c.start || [0, 0, 0]; for (let j = 0; j < c.grid[1]; j++) for (let i = 0; i < c.grid[0]; i++) o.push([s[0] + i * c.step[0], s[1], s[2] + j * c.step[1]]); return o; };
+  function rbox(w, h, d, r) {
+    const b = Math.min(h * 0.3, r * 0.6, 0.12); r = Math.max(0.01, Math.min(r, w / 2 - b - 0.01, d / 2 - b - 0.01));
+    const W = w - 2 * b, D = d - 2 * b, x = -W / 2, y = -D / 2, s = new T.Shape();
+    s.moveTo(x + r, y); s.lineTo(x + W - r, y); s.quadraticCurveTo(x + W, y, x + W, y + r); s.lineTo(x + W, y + D - r); s.quadraticCurveTo(x + W, y + D, x + W - r, y + D);
+    s.lineTo(x + r, y + D); s.quadraticCurveTo(x, y + D, x, y + D - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+    const g = new T.ExtrudeGeometry(s, { depth: Math.max(0.001, h - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 8 });
+    g.rotateX(-Math.PI / 2); g.translate(0, -(h - 2 * b) / 2, 0); return g;
+  }
+  const texs = {};
+  function printTex(pr, pw, pd) {
+    const k = [pr.text, pw.toFixed(2), pd.toFixed(2), pr.color].join('|'); if (texs[k]) return texs[k];
+    const c = document.createElement('canvas'), W = 1024, H = Math.max(48, Math.round(W * pd / pw)); c.width = W; c.height = H;
+    const g = c.getContext('2d'), lines = String(pr.text).split('\n'), fam = "'Barlow Condensed','Arial Narrow',sans-serif";
+    let fs = (H / lines.length) * 0.74; g.font = `700 ${fs}px ${fam}`; const mw = Math.max(...lines.map(l => g.measureText(l).width));
+    if (mw > W * 0.94) fs *= (W * 0.94) / mw; g.font = `700 ${fs}px ${fam}`; g.fillStyle = pr.color || '#EDE9DF'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    lines.forEach((l, i) => g.fillText(l, W / 2, (H * (i + 0.5)) / lines.length));
+    const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 8; return (texs[k] = t);
+  }
+  const edgeCol = col('#1D2230'), offCol = col('#C9C5BA'), black = new T.Color(0);
+  function make(p, par, lv) {
+    spots(p).forEach((pos, idx) => {
+      const g = new T.Group(); g.position.fromArray(pos); if (p.rot) g.rotation.set(...p.rot.map(d => (d * Math.PI) / 180)); (par ? par.g : lv.root).add(g);
+      const it = { p, idx, g, lv, par, kids: [], meshes: [], prints: [], key: (par ? par.key + '/' : '') + p.id + '@' + idx, base: g.position.clone(), ex: V().fromArray(p.explode || [0, 0, 0]) };
+      if (par) par.kids.push(it); build(it); lv.insts.push(it); M.parts.filter(c => c.parent === p.id).forEach(c => make(c, it, lv));
+    });
+  }
+  function build(it) {
+    const p = it.p, s = p.shape || { type: 'box', size: [1, 1, 1] }; it.c0 = col(p.color || UI.roleHex(p)); it.ec = col(UI.roleHex(p));
+    const m = (it.mat = new T.MeshStandardMaterial({ color: it.c0.clone(), metalness: p.metal ?? 0.2, roughness: p.rough ?? 0.6, clippingPlanes: [clip] }));
+    const add = (o, edges, parent = it.g) => { o.userData.it = it; if (o.isMesh) o.castShadow = o.receiveShadow = true; parent.add(o); it.meshes.push(o);
+      if (!edges) return; const e = new T.LineSegments(new T.EdgesGeometry(o.geometry, 25), it.emat || (it.emat = new T.LineBasicMaterial({ color: edgeCol, transparent: true, opacity: 0.22, clippingPlanes: [clip] })));
+      e.position.copy(o.position); e.rotation.copy(o.rotation); parent.add(e); it.meshes.push(e); };
+    let top, fw, fd;
+    if (s.type === 'cyl') { add(new T.Mesh(new T.CylinderGeometry(s.r, s.r2 ?? s.r, s.h, s.seg || 48), m), true); top = s.h / 2; fw = fd = s.r * 1.4; }
+    else if (s.type === 'fan') {
+      add(new T.Mesh(new T.CylinderGeometry(s.r * 0.3, s.r * 0.3, s.h, 40), m), true);
+      const ring = new T.Mesh(new T.TorusGeometry(s.r, 0.12, 10, 80), m); ring.rotation.x = Math.PI / 2; add(ring);
+      it.spin = new T.Group(); it.g.add(it.spin); const n = s.blades || 7;
+      for (let i = 0; i < n; i++) { const pv = new T.Group(); pv.rotation.y = (i * 2 * Math.PI) / n; it.spin.add(pv);
+        const b = new T.Mesh(new T.BoxGeometry(s.r * 0.66, 0.05, s.r * 0.34), m); b.position.x = s.r * 0.62; b.rotation.x = 0.45; add(b, false, pv); }
+      top = s.h / 2; fw = fd = s.r * 0.5;
+    } else if (s.type === 'grid') {
+      const [nx, nz] = s.n, c = s.cell, gap = s.gap ?? 0.15, im = new T.InstancedMesh(new T.BoxGeometry(...c), m, nx * nz), M4 = new T.Matrix4();
+      const w = nx * c[0] + (nx - 1) * gap, d = nz * c[2] + (nz - 1) * gap; let k = 0;
+      for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { M4.setPosition(-w / 2 + c[0] / 2 + i * (c[0] + gap), 0, -d / 2 + c[2] / 2 + j * (c[2] + gap)); im.setMatrixAt(k++, M4); }
+      add(im); top = c[1] / 2; fw = w; fd = d;
+    } else if (s.type === 'rbox') { add(new T.Mesh(rbox(...s.size, s.r ?? 0.25), m), false); top = s.size[1] / 2; [fw, , fd] = s.size; }
+    else { add(new T.Mesh(new T.BoxGeometry(...s.size), m), true); top = s.size[1] / 2; [fw, , fd] = s.size; }
+    it.h = top * 2;
+    (Array.isArray(p.print) ? p.print : p.print ? [p.print] : []).forEach(pr => {
+      const turn = Math.abs(pr.rot || 0) === 90, pw = (turn ? fd : fw) * (pr.w ?? 0.8), pd = (turn ? fw : fd) * (pr.d ?? 0.5);
+      const pm = new T.Mesh(new T.PlaneGeometry(pw, pd), new T.MeshBasicMaterial({ map: printTex(pr, pw, pd), transparent: true, depthWrite: false, clippingPlanes: [clip], toneMapped: false }));
+      pm.rotation.x = -Math.PI / 2; pm.rotation.z = ((pr.rot || 0) * Math.PI) / 180; pm.position.set(pr.off?.[0] || 0, top + 0.004, pr.off?.[1] || 0);
+      pm.userData.it = it; it.g.add(pm); it.meshes.push(pm); it.prints.push(pm);
+    });
+  }
+  M.parts.filter(p => !p.parent).forEach(p => make(p, null, LV[p.level]));
+  const find = (lv, ref) => lv.insts.find(i => i.key === ref || i.key.endsWith('/' + ref)) || lv.insts.find(i => i.p.id === ref);
+  const sub = (it, o = []) => { o.push(it); it.kids.forEach(k => sub(k, o)); return o; };
+  const wpos = (it, lift = 0) => { const v = V(); it.g.getWorldPosition(v); v.y += it.h / 2 + lift; return v; };
+  const dot = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    r.addColorStop(0, '#fff'); r.addColorStop(0.5, '#fff'); r.addColorStop(0.62, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new T.CanvasTexture(c); })();
+  Object.values(LV).forEach(lv => (lv.d.flows || []).forEach(f => {
+    const srcs = f.each ? lv.insts.filter(i => i.p.id === f.from) : [find(lv, f.from)];
+    const streams = srcs.filter(Boolean).map(s => [s, ...(f.via || []).map(r => find(lv, r)), find(lv, f.to)].filter(Boolean)), n = f.count || 8;
+    const geo = new T.BufferGeometry(), arr = new Float32Array(streams.length * n * 3); geo.setAttribute('position', new T.BufferAttribute(arr, 3));
+    const pts = new T.Points(geo, new T.PointsMaterial({ color: col(UI.roleHex({ role: f.role })), size: 9 * (f.size || 1), map: dot, transparent: true, depthWrite: false, alphaTest: 0.05 }));
+    pts.visible = false; pts.frustumCulled = false; pts.renderOrder = 5; lv.root.add(pts);
+    lv.flows.push({ f, pts, on: false, tick(t) { let q = 0; streams.forEach(st => { const P = st.map(i => wpos(i, f.lift ?? 0.4)), L = [0];
+      for (let k = 1; k < P.length; k++) L.push(L[k - 1] + P[k].distanceTo(P[k - 1])); const tot = L[L.length - 1] || 1;
+      for (let k = 0; k < n; k++) { const u = (((t / 1000) * (f.speed || 0.5) + k / n) % 1) * tot; let s = 1; while (s < L.length - 1 && L[s] < u) s++;
+        const v = P[s - 1].clone().lerp(P[s], (u - L[s - 1]) / (L[s] - L[s - 1] || 1)); arr[q++] = v.x; arr[q++] = v.y; arr[q++] = v.z; } }); geo.attributes.position.needsUpdate = true; } });
+  }));
+  /* look */
+  function paint(it) { if (!it) return; const on = it === sel ? 0.5 : it === hover ? 0.22 : 0, xr = S.xray && it.p.xray, gh = !!selSet && !selSet.has(it), see = xr || gh;
+    it.mat.color.copy(it.off ? offCol : it.c0); it.mat.emissive.copy(it.off ? black : it.ec); it.mat.emissiveIntensity = on;
+    if (it.mat.transparent !== see) { it.mat.transparent = see; it.mat.depthWrite = !see; it.mat.needsUpdate = true; }
+    const op = xr ? 0.12 : gh ? 0.2 : 1; it.mat.opacity = op; it.prints.forEach(m => (m.material.opacity = op));
+    if (it.emat) it.emat.opacity = gh ? 0.05 : xr ? 0.15 : it === sel ? 0.75 : 0.22; it.meshes.forEach(m => { if (m.isMesh && !m.material.map) m.castShadow = !see; }); }
+  const repaint = () => cur.insts.forEach(paint);
+  function applyVis() { const keep = S.isolate && sel ? new Set(sub(sel)) : null; cur.insts.forEach(i => i.meshes.forEach(m => (m.visible = !keep || keep.has(i)))); }
+  function applyVariant() { const v = cur.d.variant, offs = S.variant && v ? v.off.map(r => find(cur, r)).filter(Boolean).flatMap(i => sub(i)) : [];
+    cur.insts.forEach(i => (i.off = offs.includes(i))); repaint(); }
+  function syncFlows() { Object.values(LV).forEach(lv => lv.flows.forEach(x => (x.pts.visible = lv === cur && x.on))); UI.legend(cur.flows.filter(x => x.on).map(x => x.f)); }
+  /* camera */
+  function boxAt(k) { const keep = cur.insts.map(i => i.g.position.clone()); cur.insts.forEach(i => i.g.position.copy(i.base).addScaledVector(i.ex, k)); cur.root.updateMatrixWorld(true);
+    const b = new T.Box3(); cur.insts.forEach(i => i.meshes.forEach(m => b.expandByObject(m))); cur.insts.forEach((i, n) => i.g.position.copy(keep[n])); cur.root.updateMatrixWorld(true); return b; }
+  const wide = () => S.callouts && stage.clientWidth > 1000 && (cur.d.callouts || []).length > 0;
+  function fit(k, dir, ms = 600) {
+    const b = boxAt(k), c = b.getCenter(V()), r = b.getSize(V()).length() / 2, W = stage.clientWidth, H = stage.clientHeight;
+    const uw = Math.max(220, W - (wide() ? 540 : 40)), uh = Math.max(180, H - 170), h1 = (r * H) / Math.min(uh, uw) * 0.92;
+    dir = (dir || cam.position.clone().sub(ctl.target)).normalize(); const p1 = c.clone().addScaledVector(dir, r * 4 + 20);
+    ground.position.set(c.x, b.min.y - 0.02, c.z); grid.position.copy(ground.position);
+    if (!ms) { half = h1; cam.zoom = 1; cam.position.copy(p1); ctl.target.copy(c); frustum(); return; }
+    tween = { t0: performance.now(), ms, p0: cam.position.clone(), q0: ctl.target.clone(), p1, q1: c, h0: half, h1, z0: cam.zoom, z1: 1 };
+  }
+  const levelDir = d => { const c = d.cam || {}; return V().fromArray(c.pos || [1, 0.85, 1.15]).sub(V().fromArray(c.target || [0, 0, 0])); };
+  function frame(it) { const b = new T.Box3(); it.meshes.forEach(m => b.expandByObject(m)); const c = b.getCenter(V()), r = Math.max(b.getSize(V()).length() / 2, 0.6);
+    const off = cam.position.clone().sub(ctl.target), z1 = Math.min(ctl.maxZoom, Math.max(1, half / (r * 3.2)));
+    tween = { t0: performance.now(), ms: 650, p0: cam.position.clone(), q0: ctl.target.clone(), p1: c.clone().add(off), q1: c, z0: cam.zoom, z1 }; }
+  /* levels */
+  function enter(id, done) {
+    const lv = LV[id]; if (!lv) return; if (lv === cur) return done && done(); const first = !cur, fade = $('#fade'); fade.style.opacity = first ? 0 : 1;
+    const run = () => {
+      if (cur) cur.root.visible = false; cur = lv; lv.root.visible = true; sel = hover = selSet = null; S.explode = ex = 0; S.cut = 0; S.isolate = S.variant = false; clip.constant = 1e4;
+      fx.clear(); pulse = null; lv.insts.forEach(i => { i.g.position.copy(i.base); i.glow = false; i.flash = 0; }); lv.flows.forEach(x => (x.on = S.flow));
+      lv.root.updateMatrixWorld(true); lv.box = boxAt(0); const R0 = lv.box.getSize(V()).length(), c = lv.box.getCenter(V());
+      ground.scale.set(R0 * 3, R0 * 3, 1); grid.scale.setScalar(R0 * 2.2);
+      key.position.copy(c).add(V().set(-0.55, 1.5, 0.85).multiplyScalar(R0)); key.target.position.copy(c);
+      const sc = key.shadow.camera; sc.left = sc.bottom = -R0 * 0.9; sc.right = sc.top = R0 * 0.9; sc.near = 0.1; sc.far = R0 * 5; sc.updateProjectionMatrix();
+      applyVariant(); applyVis(); syncFlows(); tween = null; fit(0, levelDir(lv.d), 0); makeCallouts(); makeLabels(); UI.onLevel(lv.d, S); UI.inspect(null);
+      fade.style.opacity = 0; if (!first) UI.emit('enter', id); done && done();
+    };
+    first ? run() : setTimeout(run, 230);
+  }
+  /* selection */
+  function info(it) { const same = cur.insts.filter(i => i.p.id === it.p.id); return { count: same.length, index: same.indexOf(it), off: !!it.off, offNote: cur.d.variant?.note,
+    kids: M.parts.filter(k => k.parent === it.p.id), parent: it.par?.p }; }
+  function select(it, doFrame) { sel = it || null; selSet = it ? new Set(sub(it)) : null; repaint(); if (S.isolate) applyVis(); UI.inspect(it, it && info(it));
+    if (it) { UI.emit('select', it.p.id); if (doFrame) frame(it); } }
+  /* callouts and labels */
+  let calls = [], labels = [];
+  function makeCallouts() { const box = $('#callouts'); box.innerHTML = '';
+    calls = (cur.d.callouts || []).map((c, i) => { const it = find(cur, c.part); if (!it) return null; const el = document.createElement('button'); el.type = 'button'; el.className = 'callout';
+      el.dataset.side = c.side || (i % 2 ? 'right' : 'left'); el.innerHTML = `${UI.icon(c.icon || it.p.role)}<div><b>${UI.esc(c.title || it.p.name)}</b><span class="prose">${c.text || ''}</span></div>`;
+      el.onclick = () => select(it, true); box.append(el); UI.link(el); return { c, it, el, color: UI.roleHex(it.p) }; }).filter(Boolean); layoutCallouts(); }
+  function layoutCallouts() { const H = stage.clientHeight, top = 64, bot = 78;
+    ['left', 'right'].forEach(side => { const list = calls.filter(k => k.el.dataset.side === side), slot = (H - top - bot) / Math.max(1, list.length);
+      list.forEach((k, i) => { const h = k.el.offsetHeight || 80; k.el.style.top = top + slot * i + Math.max(0, (slot - h) / 2) + 'px'; k.el.style[side] = '16px'; }); }); }
+  function drawLeaders() { const svg = $('#leaders'); if (!S.callouts || !calls.length) { svg.innerHTML = ''; $('#callouts').style.display = S.callouts ? '' : 'none'; return; }
+    $('#callouts').style.display = ''; const W = stage.clientWidth, H = stage.clientHeight, sr = stage.getBoundingClientRect(); let s = '';
+    calls.forEach(k => { const v = wpos(k.it, 0); if (k.c.at) v.add(V().fromArray(k.c.at)); v.project(cam); if (!k.it.meshes[0].visible) return;
+      const x = (v.x * 0.5 + 0.5) * W, y = (-v.y * 0.5 + 0.5) * H, r = k.el.getBoundingClientRect(), L = k.el.dataset.side === 'left';
+      const ax = (L ? r.right : r.left) - sr.left, ay = r.top - sr.top + Math.min(30, r.height / 2), bx = ax + (L ? 22 : -22);
+      s += `<path d="M${ax} ${ay}H${bx}L${x} ${y}" stroke="${k.color}" stroke-width="2" stroke-dasharray="6 5" fill="none"/><circle cx="${ax}" cy="${ay}" r="4.5" fill="${k.color}"/><circle cx="${x}" cy="${y}" r="6" fill="${k.color}" stroke="#fff" stroke-width="2"/>`; });
+    svg.innerHTML = s; }
+  function makeLabels() { $('#labels').innerHTML = ''; const firsts = new Set();
+    labels = cur.insts.filter(i => i.p.label && (i.p.labelAll || (!firsts.has(i.p.id) && firsts.add(i.p.id)))).map(it => { const s = document.createElement('span'); s.className = 'lbl';
+      s.textContent = it.p.label === true ? it.p.name : it.p.label; s.onclick = () => select(it, true); $('#labels').append(s); return { it, s }; }); }
+  function placeLabels() { if (getComputedStyle($('#labels')).display === 'none') return; const W = stage.clientWidth, H = stage.clientHeight;
+    labels.forEach(({ it, s }) => { const v = wpos(it, 0.3); if (it.p.labelAt) v.add(V().fromArray(it.p.labelAt)); v.project(cam);
+      s.hidden = !it.meshes[0].visible || v.z > 1; s.style.left = (v.x * 0.5 + 0.5) * W + 'px'; s.style.top = (-v.y * 0.5 + 0.5) * H + 'px'; }); }
+  /* pointer */
+  const ray = new T.Raycaster(), ndc = new T.Vector2(), tip = $('#tip'); let down = null, pend = null;
+  function pick(e) { const r = R.domElement.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, cam);
+    let back = null; for (const h of ray.intersectObjects(cur.root.children, true)) { const it = h.object.userData.it;
+      if (!it || !h.object.isMesh || h.object.material.map || !h.object.visible || (S.xray && it.p.xray) || (S.cut > 0 && h.point.x > clip.constant)) continue;
+      if (selSet && !selSet.has(it)) { back = back || it; continue; } return it; } return back; }
+  const cv = R.domElement;
+  cv.addEventListener('pointermove', e => { if (pend) return; pend = requestAnimationFrame(() => { pend = null; const it = down ? null : pick(e);
+    if (it !== hover) { const o = hover; hover = it; paint(o); paint(it); } if (!it) { tip.style.display = 'none'; cv.style.cursor = ''; return; } cv.style.cursor = 'pointer';
+    const r = stage.getBoundingClientRect(); tip.innerHTML = `<b>${UI.esc(it.p.name)}</b>${UI.esc((it.p.what || '').split('. ')[0])}.<br><i>${it.p.enter ? 'Double-click to go inside' : 'Click to inspect'}</i>`;
+    tip.style.display = 'block'; tip.style.left = Math.min(e.clientX - r.left + 14, r.width - tip.offsetWidth - 8) + 'px'; tip.style.top = e.clientY - r.top + 16 + 'px'; }); });
+  cv.addEventListener('pointerleave', () => { tip.style.display = 'none'; const o = hover; hover = null; paint(o); });
+  cv.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; tip.style.display = 'none'; });
+  cv.addEventListener('pointerup', e => { if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) < 5) select(pick(e)); down = null; });
+  cv.addEventListener('dblclick', e => { const it = pick(e); if (it) it.p.enter ? enter(it.p.enter) : frame(it); });
+  addEventListener('keydown', e => { if (e.target.matches('input,textarea')) return; if (e.key === 'Escape') select(null);
+    if (e.key === 'Enter' && sel && sel.p.enter) enter(sel.p.enter); if (e.key === 'Backspace' && cur.d.parent) enter(cur.d.parent); });
+  new ResizeObserver(() => { R.setSize(stage.clientWidth, stage.clientHeight, false); frustum(); if (cur) layoutCallouts(); }).observe(stage);
+  /* effects driven by the code runner */
+  const fx = new Set(); let pulse = null;
+  const refs = list => list.flatMap(r => (r.includes('@') ? [find(cur, r)] : cur.insts.filter(i => i.p.id === r))).filter(Boolean);
+  const clearGlow = () => fx.forEach(i => (i.glow = false));
+  (function loop(t) { requestAnimationFrame(loop); if (!cur) return; ex += (S.explode - ex) * 0.12; cur.insts.forEach(i => i.g.position.copy(i.base).addScaledVector(i.ex, ex));
+    if (tween) { const k = Math.min(1, (t - tween.t0) / tween.ms), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+      if (tween.p1) { cam.position.lerpVectors(tween.p0, tween.p1, e); ctl.target.lerpVectors(tween.q0, tween.q1, e); }
+      if (tween.h1 != null) half = tween.h0 + (tween.h1 - tween.h0) * e; if (tween.z1 != null) cam.zoom = tween.z0 + (tween.z1 - tween.z0) * e; frustum(); if (k === 1) tween = null; }
+    ctl.update(); let flowing = false; cur.flows.forEach(x => { if (x.on) { x.tick(t); flowing = true; } }); if (flowing) cur.insts.forEach(i => { if (i.spin) i.spin.rotation.y += 0.09; });
+    if (pulse) { if (t > pulse.until) pulse = null; else pulse.list.forEach(i => { if (!i.off && Math.random() < pulse.rate * 0.016) { i.flash = 1; fx.add(i); } }); }
+    fx.forEach(i => { if (i.glow) { i.mat.emissive.copy(i.ec); i.mat.emissiveIntensity = 0.45 + 0.3 * Math.sin(t / 110); }
+      else if (i.flash > 0.03) { i.mat.emissive.copy(i.ec); i.mat.emissiveIntensity = i.flash * 0.9; i.flash *= 0.93; } else { i.flash = 0; fx.delete(i); paint(i); } });
+    R.render(scene, cam); drawLeaders(); placeLabels(); })(0);
+  /* thumbnails for the lessons strip */
+  function snapshots(list) {
+    const TR = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); TR.setPixelRatio(1); TR.setSize(224, 152);
+    TR.outputEncoding = T.sRGBEncoding; TR.toneMapping = T.ACESFilmicToneMapping; TR.localClippingEnabled = true;
+    const tc = new T.OrthographicCamera(-1, 1, 1, -1, -3000, 6000), home = cur, keepEx = ex; ground.visible = grid.visible = false;
+    const out = list.map(({ level, explode }) => { const lv = LV[level]; if (!lv) return ''; Object.values(LV).forEach(l => (l.root.visible = l === lv)); cur = lv;
+      lv.insts.forEach(i => i.g.position.copy(i.base).addScaledVector(i.ex, explode || 0)); lv.root.updateMatrixWorld(true);
+      const b = new T.Box3(); lv.insts.forEach(i => i.meshes.forEach(m => b.expandByObject(m))); const c = b.getCenter(V()), r = b.getSize(V()).length() / 2, a = 224 / 152;
+      tc.left = -r * a * 0.78; tc.right = r * a * 0.78; tc.top = r * 0.78; tc.bottom = -r * 0.78; tc.position.copy(c).addScaledVector(levelDir(lv.d).normalize(), r * 4 + 20);
+      tc.lookAt(c); tc.updateProjectionMatrix(); TR.render(scene, tc); lv.insts.forEach(i => i.g.position.copy(i.base)); return TR.domElement.toDataURL('image/png'); });
+    cur = home; Object.values(LV).forEach(l => (l.root.visible = l === home)); home.insts.forEach(i => i.g.position.copy(i.base).addScaledVector(i.ex, keepEx));
+    ground.visible = grid.visible = true; TR.dispose(); TR.forceContextLoss(); return out;
+  }
+  /* API for ui.js */
+  return {
+    enter, snapshots, retheme, level: () => cur && cur.d, select: id => { const all = cur.insts.filter(i => i.p.id === id); select(all.find(i => !i.off) || all[0], true); },
+    selectKid: id => { const k = sel && sel.kids.find(x => x.p.id === id); if (k) select(k, true); }, goInside: () => sel && sel.p.enter && enter(sel.p.enter),
+    parts: () => M.parts.filter(p => p.level === cur.d.id).map(p => ({ p, n: cur.insts.filter(i => i.p.id === p.id).length })),
+    setExplode: (v, refit) => { S.explode = v; $('#t-explode').value = v; if (refit) fit(v); }, fitNow: () => fit(S.explode),
+    setCut: v => { S.cut = v; const b = cur.box; clip.constant = v ? b.max.x - v * (b.max.x - b.min.x) : 1e4; },
+    toggle: name => { S[name] = !S[name]; if (name === 'xray') repaint(); if (name === 'flow') { cur.flows.forEach(x => (x.on = S.flow)); syncFlows(); }
+      if (name === 'variant') { applyVariant(); if (sel) UI.inspect(sel, info(sel)); } if (name === 'isolate') applyVis(); if (name === 'callouts') fit(S.explode); return S[name]; },
+    rotate: d => { const off = cam.position.clone().sub(ctl.target).applyAxisAngle(V().set(0, 1, 0), (d * Math.PI) / 6);
+      tween = { t0: performance.now(), ms: 500, p0: cam.position.clone(), q0: ctl.target.clone(), p1: ctl.target.clone().add(off), q1: ctl.target.clone() }; },
+    zoom: f => (tween = { t0: performance.now(), ms: 300, z0: cam.zoom, z1: Math.min(ctl.maxZoom, Math.max(ctl.minZoom, cam.zoom * f)) }),
+    reset: () => { S.explode = 0; $('#t-explode').value = 0; select(null); fit(0, levelDir(cur.d)); },
+    glow: list => refs(list).forEach(i => { i.glow = true; fx.add(i); }), clearGlow,
+    flow: (i, on) => { const x = cur.flows[i]; if (x) { x.on = on; syncFlows(); } },
+    pulse: (id, secs, rate) => (pulse = { list: cur.insts.filter(i => i.p.id === id), until: performance.now() + secs * 1000, rate }),
+    clearFx: () => { clearGlow(); pulse = null; if (sel) select(null); cur.flows.forEach(x => (x.on = S.flow)); syncFlows(); }
+  };
+}
+
+/* ui.js: panels, lessons, glossary and the code runner. Do not edit per lesson. */
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const M = JSON.parse($('#model').textContent);
+const ROLES = { compute: ['#E08A3C', 'Compute'], tensor: ['#D9668B', 'Matrix math'], memory: ['#7B68D9', 'Memory'], cache: ['#4C8FE0', 'Cache'], control: ['#1FA5B8', 'Control'],
+  cluster: ['#8B93AA', 'Cluster'], power: ['#D9A92E', 'Power'], io: ['#3FA36B', 'Input/output'], cooling: ['#8F98AA', 'Cooling'], structure: ['#6B7385', 'Structure'], board: ['#2F6B52', 'Circuit board'] };
+const roleHex = p => (ROLES[p.role] || [p.color || '#8890A8'])[0];
+const ICONS = {
+  chip: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  compute: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3v3H8zM13 8h3v3h-3zM8 13h3v3H8zM13 13h3v3h-3z"/>',
+  tensor: '<path d="M4 4h16v16H4zM4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/>',
+  memory: '<rect x="3" y="7" width="18" height="9" rx="1.5"/><path d="M7 16v3M11 16v3M15 16v3M19 16v3M7 10.5h2M11 10.5h2M15 10.5h2"/>',
+  cache: '<path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/>',
+  control: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="12" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.5 6H12a3 3 0 0 1 3 3v.5M8.5 18H12a3 3 0 0 0 3-3v-.5"/>',
+  cluster: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+  power: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', io: '<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>',
+  cooling: '<circle cx="12" cy="12" r="2"/><path d="M12 10c0-4 1-7 4-7s3 4-2 7M14 12c4 0 7 1 7 4s-4 3-7-2M12 14c0 4-1 7-4 7s-3-4 2-7M10 12c-4 0-7-1-7-4s4-3 7 2"/>',
+  board: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h4l2 2h4M7 16h3l2-2h5"/><circle cx="7" cy="8" r="1"/><circle cx="7" cy="16" r="1"/>',
+  structure: '<path d="M12 3l8 4v10l-8 4-8-4V7z"/><path d="M12 3v18M4 7l8 4 8-4"/>',
+  home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>', book: '<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/>',
+  list: '<path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  terms: '<path d="M3 19l5-14 5 14M5 14h6"/><path d="M15 8h6M15 12h6M15 16h6"/>', theme: '<path d="M20 14a8 8 0 1 1-10-10 6.5 6.5 0 0 0 10 10z"/>',
+  rotl: '<path d="M4 4v6h6"/><path d="M5.5 15a8 8 0 1 0 1.8-8.3L4 10"/>', rotr: '<path d="M20 4v6h-6"/><path d="M18.5 15a8 8 0 1 1-1.8-8.3L20 10"/>',
+  minus: '<path d="M5 12h14"/>', plus: '<path d="M12 5v14M5 12h14"/>', xray: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  flow: '<path d="M3 7c3 0 3-3 6-3s3 3 6 3 3-3 6-3M3 13c3 0 3-3 6-3s3 3 6 3 3-3 6-3M3 19c3 0 3-3 6-3s3 3 6 3 3-3 6-3"/>',
+  callouts: '<rect x="3" y="4" width="11" height="7" rx="1.5"/><path d="M14 7.5h3l3 9"/><circle cx="20" cy="17.5" r="2"/>',
+  isolate: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>', reset: '<path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5"/>',
+  play: '<path d="M7 4l13 8-13 8z" fill="currentColor"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  check: '<path d="M5 12l5 5 9-10" stroke-width="3"/>'
+};
+const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ICONS.chip}</svg>`;
+$$('[data-icon]').forEach(b => b.insertAdjacentHTML('afterbegin', icon(b.dataset.icon)));
+/* glossary */
+const GL = M.glossary || [], byId = new Map(GL.map(e => [e.id, e])), alias = new Map();
+GL.forEach(e => [e.term, ...(e.aliases || [])].forEach(a => alias.set(e.exact ? a : a.toLowerCase(), e)));
+const RX = alias.size ? new RegExp('(?<![\\w-])(' + [...new Set(GL.flatMap(e => [e.term, ...(e.aliases || [])]))].sort((a, b) => b.length - a.length)
+  .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![\\w-])', 'gi') : null;
+function link(root) {
+  if (!RX || !root) return; const seen = new Set(), nodes = [];
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => (!n.nodeValue.trim() || n.parentElement.closest('button:not(.callout),a,code,pre,.term,input') ? 2 : 1) });
+  while (w.nextNode()) nodes.push(w.currentNode);
+  nodes.forEach(n => { const t = n.nodeValue; let m, last = 0, frag = null; RX.lastIndex = 0;
+    while ((m = RX.exec(t))) { const e = alias.get(m[1]) || alias.get(m[1].toLowerCase()); if (!e) continue;
+      const s = document.createElement('span'); s.className = 'term' + (seen.has(e.id) ? ' rep' : ''); s.dataset.term = e.id; s.tabIndex = 0; s.textContent = m[1]; seen.add(e.id);
+      (frag = frag || document.createDocumentFragment()).append(t.slice(last, m.index), s); last = m.index + m[1].length; }
+    if (frag) { frag.append(t.slice(last)); n.replaceWith(frag); } });
+}
+const pop = $('#pop'); let anchor = null, hideT, showT;
+function showTerm(el, id) {
+  const e = byId.get(id); if (!e) return; anchor = el; clearTimeout(hideT); const rel = (e.related || []).filter(r => byId.has(r));
+  pop.innerHTML = `<b class="pt">${e.term}</b><p>${e.short}</p>${e.analogy ? `<p class="sub">Like: ${e.analogy}</p>` : ''}${e.why ? `<p class="sub">Why it matters: ${e.why}</p>` : ''}` +
+    (rel.length ? `<div class="pr">${rel.map(r => `<button type="button" data-rel="${r}">${byId.get(r).term}</button>`).join('')}</div>` : '') + (e.more ? `<p><a href="${e.more}" target="_blank" rel="noopener">Read more</a></p>` : '');
+  pop.style.display = 'block'; const r = el.getBoundingClientRect(), box = (el.closest && el.closest('#task')) || el, rb = box.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let y = rb.bottom + 8; if (y + ph > innerHeight - 8) y = Math.max(8, rb.top - ph - 8);
+  pop.style.left = Math.min(Math.max(8, r.left + r.width / 2 - pw / 2), innerWidth - pw - 8) + 'px'; pop.style.top = y + 'px';
+}
+const hideTerm = () => { pop.style.display = 'none'; anchor = null; };
+document.addEventListener('mouseover', e => { if (e.target.closest('#pop')) return clearTimeout(hideT); const t = e.target.closest('.term');
+  if (t) { clearTimeout(hideT); clearTimeout(showT); showT = setTimeout(() => showTerm(t, t.dataset.term), 120); } });
+document.addEventListener('mouseout', e => { if (e.target.closest('.term,#pop')) { clearTimeout(showT); hideT = setTimeout(hideTerm, 300); } });
+document.addEventListener('click', e => { const r = e.target.closest('[data-rel]'); if (r) return showTerm(anchor || r, r.dataset.rel);
+  const t = e.target.closest('.term'); if (t && !t.closest('.callout')) { e.stopPropagation(); return showTerm(t, t.dataset.term); } if (!e.target.closest('#pop')) hideTerm(); }, true);
+document.addEventListener('focusin', e => { const t = e.target.closest && e.target.closest('.term'); if (t) showTerm(t, t.dataset.term); });
+$$('dialog [data-close]').forEach(b => (b.onclick = () => b.closest('dialog').close()));
+function openTerms() { const list = $('#gloss-list'), q = $('#gloss-q');
+  const draw = () => { const s = q.value.trim().toLowerCase(); list.innerHTML = GL.filter(e => !s || [e.term, ...(e.aliases || []), e.short].join(' ').toLowerCase().includes(s))
+    .sort((a, b) => a.term.localeCompare(b.term)).map(e => `<li><b>${e.term}</b>: ${e.short}${e.analogy ? `<br><i class="muted">Like: ${e.analogy}</i>` : ''}</li>`).join(''); };
+  q.oninput = draw; draw(); $('#gloss').showModal(); }
+/* panels */
+let level = null, curIt = null, curInfo = null, tab = 'overview';
+const feats = f => (f || []).map(([k, t]) => `<div class="feat"><i>${icon(k)}</i><span class="prose">${t}</span></div>`).join('');
+function renderPanel() {
+  const b = $('#pbody'), p = curIt && curIt.p, inf = curInfo || {}; let h = '';
+  if (tab === 'overview') h = !p ? `<span class="chip">${icon('structure')} Zoom level</span><h2>${esc(level.name)}</h2><p class="prose">${level.note || ''}</p>${feats(level.features)}<p class="muted">Click any part. Double-click a part with ↘ to go inside it.</p>`
+    : `<span class="chip"><span class="sw" style="background:${roleHex(p)}"></span>${(ROLES[p.role] || ['', 'Part'])[1]}${inf.count > 1 ? ` · ${inf.index + 1} of ${inf.count}` : ''}</span><h2>${esc(p.name)}${p.enter ? ' ↘' : ''}</h2>` +
+      (inf.off ? `<p class="off prose">${inf.offNote || 'Disabled in this configuration.'}</p>` : '') + `<p class="prose">${p.what || ''}</p>${p.why ? `<p class="prose"><b>Why it matters.</b> ${p.why}</p>` : ''}${feats(p.features)}` +
+      (p.enter ? `<button type="button" class="go" data-go>Go inside ↘</button>` : '');
+  if (tab === 'specs') { const n = (p ? p.nums : level.nums) || []; h = `<h2>${esc(p ? p.name : level.name)}</h2>` + (n.length ? `<table class="nums">${n.map(([k, v]) => `<tr><td class="prose">${k}</td><td>${v}</td></tr>`).join('')}</table>` : '<p class="muted">No numbers for this yet. Try Overview.</p>'); }
+  if (tab === 'inside') h = !p ? `<h2>${esc(level.name)}</h2><p class="muted">Select a part to see what is inside it and what it belongs to.</p>`
+    : `<h2>${esc(p.name)}</h2>${inf.parent ? `<p class="muted">Part of: <b>${esc(inf.parent.name)}</b></p>` : ''}` +
+      ((inf.kids || []).length ? `<div class="kids">${inf.kids.map(k => `<button type="button" data-kid="${k.id}"><span class="sw" style="background:${roleHex(k)}"></span>${esc(k.name)}</button>`).join('')}</div>` : '<p class="muted">No smaller parts at this level.</p>') +
+      (p.enter ? `<button type="button" class="go" data-go>Go inside ↘</button>` : '');
+  b.innerHTML = h; link(b); $$('[data-kid]', b).forEach(x => (x.onclick = () => E && E.selectKid(x.dataset.kid))); const g = $('[data-go]', b); if (g) g.onclick = () => E && E.goInside();
+}
+$$('.tabs button').forEach(t => (t.onclick = () => { tab = t.dataset.tab; $$('.tabs button').forEach(x => x.setAttribute('aria-selected', x === t)); renderPanel(); }));
+function crumbs() { const ch = []; let d = level; while (d) { ch.unshift(d); d = d.parent && M.levels.find(l => l.id === d.parent); }
+  $('#crumbs').innerHTML = ch.map((d, i) => (i ? '<i>›</i>' : '') + `<button type="button" data-lv="${d.id}"${i === ch.length - 1 ? ' aria-current="true"' : ''}>${esc(d.name)}</button>`).join('');
+  $$('#crumbs [data-lv]').forEach(b => (b.onclick = () => E && E.enter(b.dataset.lv))); }
+/* lessons */
+const LS = M.lessons || [], PK = 'teardown:' + M.slug, prog = Object.assign({ lesson: 0, done: {} }, store.get(PK) || {});
+let shown = 0, small = false;
+const doneOf = l => prog.done[l.id] || (prog.done[l.id] = []), save = () => store.set(PK, prog), curL = () => LS[prog.lesson];
+const firstOpen = l => { const i = l.missions.findIndex((m, k) => !doneOf(l).includes(k)); return i < 0 ? l.missions.length - 1 : i; };
+function srcLink(ts) { const u = (M.source || {}).url || ''; if (!ts || !u) return ''; const id = (u.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/) || [])[1];
+  const sec = ts.split(':').reduce((a, v) => a * 60 + Number(v), 0); return ` <a href="${id && /^\d+(:\d{2}){1,2}$/.test(ts) ? `https://www.youtube.com/watch?v=${id}&t=${sec}s` : u}" target="_blank" rel="noopener">${id ? 'Watch this part (' + ts + ')' : 'Source: ' + esc(ts)}</a>`; }
+function renderTask() {
+  const l = curL(), t = $('#task'); if (!l) return (t.hidden = true); t.hidden = false; const i = Math.min(shown, l.missions.length - 1), m = l.missions[i], done = doneOf(l).includes(i), last = i === l.missions.length - 1;
+  t.className = 'task' + (small ? ' min' : '');
+  t.innerHTML = `<div class="tk-h"><span>Lesson ${prog.lesson + 1} · Step ${i + 1} of ${l.missions.length}</span><div>${m.hint && !done ? '<button type="button" data-a="hint">Hint</button>' : ''}<button type="button" data-a="min" aria-label="${small ? 'Expand' : 'Minimize'}">${icon(small ? 'plus' : 'minus')}</button></div></div>` +
+    `<p class="tk-t prose">${m.text}</p><p class="tk-hint prose" hidden>${m.hint || ''}</p>` +
+    (done ? `<div class="tk-r"><p class="prose">${m.reward || ''}${srcLink(m.src)}</p><button type="button" class="tk-next" data-a="next">${last ? (prog.lesson + 1 < LS.length ? 'Next lesson' : 'Finish') : 'Next step'}</button></div>` : '');
+  link(t);
+}
+$('#task').addEventListener('click', e => { const a = e.target.closest('[data-a]')?.dataset.a; if (!a) return; if (a === 'hint') { $('.tk-hint').hidden = false; e.target.closest('button').remove(); }
+  if (a === 'min') { small = !small; renderTask(); } if (a === 'next') { const l = curL(); if (shown < l.missions.length - 1) { shown++; renderTask(); } else if (prog.lesson + 1 < LS.length) startLesson(prog.lesson + 1); } });
+function emit(ev, val) {
+  const l = curL(); if (!l) return; const m = l.missions[shown]; if (!m || doneOf(l).includes(shown)) return; const c = m.check || {};
+  if (c.on === ev && (c.part ? val === c.part : c.level ? val === c.level : c.gte != null ? val >= c.gte : !!val)) { doneOf(l).push(shown); save(); small = false; renderTask(); renderStrip(); renderProg(); }
+}
+let thumbs = [];
+function renderStrip() { $('#strip').innerHTML = LS.map((l, i) => `<button type="button" class="lesson" data-li="${i}"${i === prog.lesson ? ' aria-current="true"' : ''}>${thumbs[i] ? `<img alt="" src="${thumbs[i]}">` : '<span class="ph0"></span>'}` +
+  `<b>${i + 1}. ${esc(l.title)}</b><span class="ck${doneOf(l).length === l.missions.length ? ' ok' : ''}">${doneOf(l).length === l.missions.length ? icon('check') : ''}</span></button>`).join('');
+  $$('#strip .lesson').forEach(b => (b.onclick = () => startLesson(+b.dataset.li))); }
+function renderProg() { const full = LS.filter(l => doneOf(l).length === l.missions.length).length, steps = LS.reduce((a, l) => a + doneOf(l).length, 0), all = LS.reduce((a, l) => a + l.missions.length, 0);
+  $('#pnum').textContent = `${full}/${LS.length}`; $('#psteps').textContent = `${steps}/${all} steps`; $('#pbar').style.width = (all ? (100 * steps) / all : 0) + '%'; }
+function startLesson(n) { prog.lesson = n; const l = curL(); shown = firstOpen(l); small = false; save(); renderStrip(); renderTask(); renderCode(l);
+  if (E) E.enter(l.level, () => { if (l.explode != null) E.setExplode(l.explode, true); }); }
+/* code runner */
+function hl(s) { const e = esc(s), c = e.indexOf('//'), code = c < 0 ? e : e.slice(0, c);
+  return code.replace(/(&quot;[^&]*&quot;)|\b(const|int|float|void|if|for|return|unsigned|__global__|__shared__|__syncthreads)\b|\b(\d[\d.]*)\b|(\w+)(?=\()/g,
+    (m, str, kw, num, fn) => (str ? `<s>${str}</s>` : kw ? `<b>${kw}</b>` : num ? `<u>${num}</u>` : `<var>${fn}</var>`)) + (c < 0 ? '' : `<em>${e.slice(c)}</em>`); }
+function renderCode(l) { const box = $('#codep'); if (!l || !l.code) return (box.hidden = true); box.hidden = false;
+  $('#src').innerHTML = l.code.split('\n').map((ln, i) => `<span class="ln" data-l="${i + 1}"><i>${i + 1}</i>${hl(ln)}</span>`).join('');
+  $('#log').innerHTML = `<div class="muted">Press ▶ to run it on the 3D model.</div>`; }
+let running = false;
+function runSim() {
+  const l = curL(); if (!l || !l.sim || running || !E) return; running = true; $('#run').disabled = true; const log = $('#log'); log.innerHTML = ''; E.clearFx(); E.fitNow();
+  const acts = [...l.sim].sort((a, b) => (a.at || 0) - (b.at || 0)), end = Math.max(...acts.map(a => a.at || 0)) + 1;
+  acts.forEach(a => setTimeout(() => {
+    if (a.enter) E.enter(a.enter); if (a.unglow) E.clearGlow(); if (a.glow) E.glow(a.glow); if (a.flow) E.flow(a.flow[0], a.flow[1]);
+    if (a.pulse) E.pulse(a.pulse.part, a.pulse.secs || 3, a.pulse.rate || 0.6); if (a.explode != null) E.setExplode(a.explode, true);
+    if (a.line) $$('#src .ln').forEach(x => x.classList.toggle('on', +x.dataset.l === a.line));
+    if (a.log) { log.insertAdjacentHTML('beforeend', `<div><span>${(a.at || 0).toFixed(1)}s</span>${a.log}</div>`); link(log.lastElementChild); log.scrollTop = log.scrollHeight; }
+  }, (a.at || 0) * 1000));
+  setTimeout(() => { running = false; $('#run').disabled = false; E.clearFx(); $$('#src .ln').forEach(x => x.classList.remove('on')); emit('run', l.id); }, end * 1000);
+}
+$('#run').onclick = runSim;
+$('#copy').onclick = () => { const l = curL(); if (l && l.code && navigator.clipboard) navigator.clipboard.writeText(l.code).catch(() => {}); };
+/* toolbar and rail */
+const press = (b, on) => b.setAttribute('aria-pressed', on);
+$$('#toolbar [data-t]').forEach(b => (b.onclick = () => { if (!E) return; const t = b.dataset.t;
+  if (t === 'rotl') E.rotate(-1); if (t === 'rotr') E.rotate(1); if (t === 'zout') E.zoom(1 / 1.3); if (t === 'zin') E.zoom(1.3); if (t === 'reset') E.reset();
+  if (['xray', 'flow', 'callouts', 'isolate', 'variant'].includes(t)) { const on = E.toggle(t); press(b, on); emit(t, on); } }));
+$('#t-explode').oninput = e => { if (E) { E.setExplode(+e.target.value); emit('explode', +e.target.value); } };
+$('#t-explode').onchange = () => E && E.fitNow();
+$('#t-cut').oninput = e => { if (E) { E.setCut(+e.target.value); emit('cut', +e.target.value); } };
+$$('.rail [data-rail]').forEach(b => (b.onclick = () => { const r = b.dataset.rail;
+  if (r === 'home' && E) E.reset(); if (r === 'lessons') $('#lessons').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); if (r === 'terms') openTerms();
+  if (r === 'parts' && E) { const ps = E.parts(), li = p => `<li><button type="button" data-p="${p.p.id}"><span class="sw" style="background:${roleHex(p.p)}"></span>${esc(p.p.name)}${p.p.enter ? ' ↘' : ''}${p.n > 1 ? ` <span class="muted">×${p.n}</span>` : ''}</button>` +
+      (ps.some(c => c.p.parent === p.p.id) ? `<ul>${ps.filter(c => c.p.parent === p.p.id).map(li).join('')}</ul>` : '') + '</li>';
+    $('#parts-list').innerHTML = ps.filter(p => !p.p.parent).map(li).join(''); $$('#parts-list [data-p]').forEach(x => (x.onclick = () => { $('#parts').close(); E.select(x.dataset.p); })); $('#parts').showModal(); }
+  if (r === 'theme') { const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark'; if (E) E.retheme(); } }));
+/* engine callbacks */
+const UI = { $, esc, icon, link, roleHex, emit,
+  onLevel(d, S) { level = d; curIt = null; crumbs(); const vb = $('#toolbar [data-t="variant"]'); vb.hidden = !d.variant; if (d.variant) vb.textContent = d.variant.label;
+    $$('#toolbar [data-t]').forEach(b => { if (b.dataset.t in S) press(b, S[b.dataset.t]); }); $('#t-cut').value = 0; renderPanel(); },
+  inspect(it, info) { curIt = it; curInfo = info; renderPanel(); },
+  legend(fs) { $('#legend').innerHTML = fs.map(f => `<span><span class="sw" style="background:${roleHex({ role: f.role })}"></span>${esc(f.label)}</span>`).join(''); } };
+/* boot */
+let E = null; const b = M.brand || {};
+$('#brand-title').innerHTML = `${esc(b.title || M.title)}${b.accent ? ` <span>${esc(b.accent)}</span>` : ''}`; $('#brand-tag').textContent = b.tagline || ''; document.title = M.title;
+renderStrip(); renderProg(); level = M.levels[0]; renderPanel(); renderTask(); renderCode(curL());
+const CDN = 'https://cdn.jsdelivr.net/npm/three@0.128.0/';
+const load = s => new Promise((res, rej) => { const el = document.createElement('script'); el.src = s; el.onload = res; el.onerror = () => rej(s); document.head.append(el); });
+const fonts = Promise.race([document.fonts ? document.fonts.load("700 40px 'Barlow Condensed'") : Promise.resolve(), new Promise(r => setTimeout(r, 1500))]);
+load(CDN + 'build/three.min.js').then(() => load(CDN + 'examples/js/controls/OrbitControls.js')).then(() => fonts).then(() => {
+  E = startEngine(M, UI); const l = curL(); E.enter((l && l.level) || M.levels[0].id);
+  try { thumbs = E.snapshots(LS.map(x => ({ level: (x.thumb || {}).level || x.level, explode: (x.thumb || {}).explode ?? x.explode ?? 0.4 }))); } catch (e) { thumbs = []; }
+  renderStrip(); startLesson(prog.lesson);
+}).catch(() => $('#stage').insertAdjacentHTML('beforeend', '<p class="fail">The 3D engine could not load (no internet, or the CDN is blocked). Lessons and terms still work.</p>'));
+
+</script>
+</body>
+</html>

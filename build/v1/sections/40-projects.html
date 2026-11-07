@@ -1,0 +1,167 @@
+<section id="projects" class="sec" aria-labelledby="projects-title">
+  <div class="wrap">
+    <header class="proj-head">
+      <p class="h-eyebrow"><span class="num">04</span>Built on my own time</p>
+      <h2 id="projects-title" class="h2 proj-title">Things I made because I wanted them to <em>exist</em>.</h2>
+      <p class="lead proj-lead">My own time, my own hardware.</p>
+    </header>
+
+    <div class="proj-filter" role="toolbar" aria-label="Filter projects" aria-controls="proj-grid">
+      <button type="button" class="proj-chip mono" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" class="proj-chip mono" data-filter="voice" aria-pressed="false">Voice and audio</button>
+      <button type="button" class="proj-chip mono" data-filter="video" aria-pressed="false">Video and image</button>
+      <button type="button" class="proj-chip mono" data-filter="agents" aria-pressed="false">Agents and tooling</button>
+      <button type="button" class="proj-chip mono" data-filter="models" aria-pressed="false">Models</button>
+      <button type="button" class="proj-chip mono" data-filter="apps" aria-pressed="false">Apps</button>
+      <p class="proj-count mono" aria-live="polite"><span data-proj-count>11</span> of 11</p>
+    </div>
+
+    <ul class="proj-grid" id="proj-grid">
+      <li class="proj-cell proj-xl reveal" data-cat="video models agents">
+        <article>
+          <p class="proj-meta mono"><span>2026</span><span class="proj-now">Current</span></p>
+          <h3 class="proj-name">Home AI cluster and clip harness</h3>
+          <p>Three machines on Tailscale. A MacBook controls, an RTX 4090 PC does the heavy work, a Mac mini runs small MLX models. One GPU job at a time, because two renders at once ran 3.5x slower.</p>
+          <p>It runs video diffusion (MiniMax-H3, LTX-2.5), FLUX images, VoxCPM voices and LoRA fine-tuning with Unsloth. LTX-2.5 renders a 10 s 720p clip in 94 s.</p>
+          <p>The clip harness ties it together. A Qwen writer plans the scenes, FLUX draws keyframe sheets, H3 renders 10 to 20 s clips chained by their last frames, and agents score frame, voice and script from 0 to 100.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>Python</li><li>ComfyUI</li><li>llama.cpp</li><li>MLX</li><li>Unsloth</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell proj-tall reveal" data-cat="voice apps">
+        <article>
+          <p class="proj-meta mono"><span>2026</span></p>
+          <h3 class="proj-name">Richie</h3>
+          <p>A voice assistant in the browser. Speech goes to text, then to Gemini 2.5 Flash-Lite, then back to speech, all over one WebSocket.</p>
+          <p>I tested five speech-to-text models before I picked one. Then I ported the server to Rust with Axum.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>WebSocket</li><li>STT</li><li>TTS</li><li>Rust</li><li>Axum</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="voice agents">
+        <article>
+          <p class="proj-meta mono"><span>2026</span></p>
+          <h3 class="proj-name">Audiotrain</h3>
+          <p>Give it a document or a codebase. It writes a fact-checked study podcast for two hosts and voices it with Gemini TTS. One episode scored 42 of 42 on its checklist.</p>
+          <p>It also has a small 3D podcast stage in the browser.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>Gemini TTS</li><li>Fact-check</li><li>Three.js</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="video agents">
+        <article>
+          <p class="proj-meta mono"><span>2026</span></p>
+          <h3 class="proj-name">VidForge</h3>
+          <p>A topic goes in. A narrated short film comes out, after 14 stages run by Claude and Gemini. A finished minute costs about $0.56 to $1.09.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>Claude</li><li>Gemini</li><li>Video</li><li>Pipeline</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="agents apps">
+        <article>
+          <p class="proj-meta mono"><span>2026</span></p>
+          <h3 class="proj-name">Relay and Deck</h3>
+          <p>Relay is a private iPhone app. It drives my Claude Code and Codex sessions over Tailscale, and I approve their actions from hook prompts on the phone.</p>
+          <p>Deck is the desktop side, written in Rust with GPUI.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>SwiftUI</li><li>Tailscale</li><li>Rust</li><li>GPUI</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="agents">
+        <article>
+          <p class="proj-meta mono"><span>2026</span></p>
+          <h3 class="proj-name">RustWall</h3>
+          <p>A Linux firewall in Rust, built on netfilter queue. A second host attacks it with rustwall-probe, an adversarial suite of eight tests.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>Rust</li><li>Linux</li><li>netfilter</li><li>Security</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="agents">
+        <article>
+          <p class="proj-meta mono"><span>2026</span></p>
+          <h3 class="proj-name">chat-recall</h3>
+          <p>A local archive of 1,725 of my chats, searchable with BM25 and vectors. Sub-agents read it and wrote a book of two years of my projects.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>BM25</li><li>Embeddings</li><li>Sub-agents</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="agents apps">
+        <article>
+          <p class="proj-meta mono"><span>2026</span><span>Design</span></p>
+          <h3 class="proj-name">LLM Room</h3>
+          <p>One chat that joins my logged-in ChatGPT, Claude and Grok sessions. It has two modes: a roundtable, and an orchestrator that hands out the work. It is a design for now.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>Desktop</li><li>Multi-model</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="apps">
+        <article>
+          <p class="proj-meta mono"><span>2024 to 2025</span></p>
+          <h3 class="proj-name">Manhattan safe-route app</h3>
+          <p>A crime-score map of Manhattan with safe walking routes. The routing graph has 41,112 nodes, and crime adds a penalty to each edge. Subway routes come from MTA GTFS.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>FastAPI</li><li>React Native</li><li>NetworkX</li><li>GitHub Actions</li><li>Lightsail</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="models video">
+        <article>
+          <p class="proj-meta mono"><span>2023 to 2024</span></p>
+          <h3 class="proj-name">Open models on Hugging Face</h3>
+          <p>A Llama 2 QLoRA fine-tune for named entities, on a customer-service dataset I curated, with a demo Space (2023). FIxtral, a Mixtral-based mixture-of-experts fine-tune for step-by-step finance and math, with a Gradio demo (2024).</p>
+          <p>FinQA on Llama 3 (2024), and npcgen, a FLUX.1-dev LoRA for game characters (2024).</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>QLoRA</li><li>PEFT</li><li>MoE</li><li>LoRA</li><li>Gradio</li></ul>
+          <ul class="proj-links mono" aria-label="Model pages">
+            <li><a href="https://huggingface.co/zaursamadov/Llama2-ft-qa" rel="noopener">Llama2-ft-qa</a></li>
+            <li><a href="https://huggingface.co/zaursamadov/FIxtral" rel="noopener">FIxtral</a></li>
+            <li><a href="https://huggingface.co/zaursamadov/FinQa-llama3" rel="noopener">FinQa-llama3</a></li>
+            <li><a href="https://huggingface.co/zaursamadov/npcgen" rel="noopener">npcgen</a></li>
+            <li><a href="https://huggingface.co/zaursamadov" rel="noopener">All on Hugging Face</a></li>
+          </ul>
+        </article>
+      </li>
+
+      <li class="proj-cell reveal" data-cat="apps models">
+        <article>
+          <p class="proj-meta mono"><span>2025 to 2026</span></p>
+          <h3 class="proj-name">Smaller things</h3>
+          <p>Synthwave, a synthetic dataset generator. BETCAST, a prediction game. Browser games in three.js.</p>
+          <p>A simulator that logs computer-use actions, and some experiments with LSB steganography.</p>
+          <ul class="proj-tags mono" aria-label="Stack"><li>Datasets</li><li>three.js</li><li>Games</li></ul>
+          <p class="proj-link mono">repo: coming soon</p>
+        </article>
+      </li>
+    </ul>
+  </div>
+  <script>
+    (function () {
+      var root = document.getElementById('projects');
+      if (!root) return;
+      var chips = root.querySelectorAll('.proj-chip');
+      var cells = root.querySelectorAll('.proj-cell');
+      var count = root.querySelector('[data-proj-count]');
+      function apply(f) {
+        var n = 0;
+        cells.forEach(function (c) {
+          var on = f === 'all' || c.getAttribute('data-cat').split(' ').indexOf(f) !== -1;
+          c.classList.toggle('is-dim', !on);
+          c.toggleAttribute('inert', !on);
+          if (on) n++;
+        });
+        chips.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-filter') === f)); });
+        count.textContent = n;
+      }
+      chips.forEach(function (b) {
+        b.addEventListener('click', function () { apply(b.getAttribute('data-filter')); });
+      });
+    })();
+  </script>
+</section>

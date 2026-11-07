@@ -1,0 +1,127 @@
+<section id="learning" class="sec learn" aria-labelledby="learning-title">
+  <div class="wrap">
+    <header class="learn-head reveal">
+      <p class="h-eyebrow"><span class="num">01</span>Now learning</p>
+      <h2 id="learning-title" class="h2 learn-title">Inference and <em>kernel</em> engineering.</h2>
+      <p class="lead learn-lead">I have spent years on models: training, fine-tuning, evaluating. Now I am learning the next layer down. How a model actually runs on the GPU. Where the time goes, where the bytes go, and why a kernel is fast or slow. I practise every day on a home RTX 4090.</p>
+    </header>
+
+    <div class="learn-log reveal" role="region" aria-labelledby="learn-log-title">
+      <div class="learn-log-head">
+        <h3 id="learn-log-title" class="mono learn-label">Study log</h3>
+        <span class="tag mono learn-status"><span class="learn-dot" aria-hidden="true"></span>Ongoing, 2026</span>
+      </div>
+      <table class="learn-table mono">
+        <thead>
+          <tr><th scope="col">Track</th><th scope="col">What it is</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">CUDA and PMPP</th><td>A 56-day programme through the PMPP book, with a coach skill.</td></tr>
+          <tr><th scope="row">AMD x GPU MODE</th><td>A GPU kernel hackathon.</td></tr>
+          <tr><th scope="row">Inference book</th><td>Baseten's inference engineering book, read alongside the kernels.</td></tr>
+          <tr><th scope="row">Kernel challenge</th><td>A kernel and serving challenge on the RTX 4090, every morning, 08:00 to 14:00.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="learn-topics reveal">
+      <h3 class="mono learn-label">The ideas I work with</h3>
+      <ul class="learn-bento">
+        <li class="learn-tile">
+          <span class="mono learn-tile-k">Memory coalescing</span>
+          <p>Neighbouring threads read neighbouring addresses, so the GPU fetches one wide block instead of many small ones.</p>
+        </li>
+        <li class="learn-tile">
+          <span class="mono learn-tile-k">Tiling and shared memory</span>
+          <p>Load a small tile of data once into fast on-chip memory, then reuse it many times.</p>
+        </li>
+        <li class="learn-tile">
+          <span class="mono learn-tile-k">Warps and occupancy</span>
+          <p>Threads run in groups called warps. Keep enough of them in flight to hide memory waits.</p>
+        </li>
+        <li class="learn-tile">
+          <span class="mono learn-tile-k">Roofline</span>
+          <p>Count FLOPs per byte. It tells you if a kernel is limited by maths or by memory.</p>
+        </li>
+        <li class="learn-tile">
+          <span class="mono learn-tile-k">Quantization</span>
+          <p>Store weights in int8, fp8 or 4-bit. Fewer bytes to move, so the same card runs bigger models faster.</p>
+        </li>
+        <li class="learn-tile">
+          <span class="mono learn-tile-k">Serving</span>
+          <p>vLLM, llama.cpp and MLX. Turning a model file into a server that answers many requests well.</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="pin learn-pin" data-learn-scrolly>
+      <div class="pin-stage learn-stage" data-active="1">
+        <svg class="learn-mem" viewBox="0 0 320 300" role="img" aria-labelledby="learn-mem-title learn-mem-desc">
+          <title id="learn-mem-title">GPU memory hierarchy</title>
+          <desc id="learn-mem-desc">Four layers from slow and large to fast and small: VRAM, L2 cache, shared memory and L1, registers. The highlighted layer changes with each step.</desc>
+          <g class="lm-layer" data-layer="vram">
+            <rect x="10" y="226" width="300" height="56" rx="4"/>
+            <text x="24" y="252">VRAM</text>
+            <text x="24" y="270" class="lm-sub">24 GB, holds the weights</text>
+          </g>
+          <g class="lm-layer" data-layer="l2">
+            <rect x="40" y="158" width="240" height="52" rx="4"/>
+            <text x="54" y="182">L2 cache</text>
+            <text x="54" y="199" class="lm-sub">shared by the whole chip</text>
+          </g>
+          <g class="lm-layer" data-layer="smem">
+            <rect x="70" y="92" width="180" height="50" rx="4"/>
+            <text x="84" y="114">Shared mem / L1</text>
+            <text x="84" y="131" class="lm-sub">one tile per block</text>
+          </g>
+          <g class="lm-layer" data-layer="reg">
+            <rect x="100" y="28" width="120" height="48" rx="4"/>
+            <text x="114" y="50">Registers</text>
+            <text x="114" y="66" class="lm-sub">per thread</text>
+          </g>
+          <path class="lm-flow" d="M300 254 C 318 200, 318 120, 230 52"/>
+          <text x="14" y="16" class="lm-sub">fast, small</text>
+          <text x="306" y="296" class="lm-sub" text-anchor="end">slow, large</text>
+        </svg>
+      </div>
+      <ol class="pin-steps learn-steps">
+        <li class="step" data-step="1">
+          <span class="mono learn-step-n">Step 1 / Model</span>
+          <p>A model is mostly weights. On my 4090 they sit in 24 GB of VRAM. Every token has to read them, so bytes moved set the pace.</p>
+        </li>
+        <li class="step" data-step="2">
+          <span class="mono learn-step-n">Step 2 / Kernel</span>
+          <p>A kernel splits the work into blocks and warps. Each block pulls a tile into shared memory and works on it in registers.</p>
+        </li>
+        <li class="step" data-step="3">
+          <span class="mono learn-step-n">Step 3 / Memory</span>
+          <p>The roofline asks one question. Does this kernel wait on memory or on maths? Coalescing, tiling and quantization all move it up the roof.</p>
+        </li>
+      </ol>
+    </div>
+
+    <figure class="learn-lesson reveal">
+      <div class="lesson-embed"><iframe src="lesson/gpu.html" title="Interactive GPU teardown lesson" loading="lazy"></iframe></div>
+      <figcaption class="learn-cap">
+        <span>Explode the card, open the die, run a kernel.</span>
+        <a class="mono learn-link" href="lesson/gpu.html" target="_blank" rel="noopener">Open full screen</a>
+      </figcaption>
+    </figure>
+  </div>
+  <script>
+  (function () {
+    var root = document.querySelector('[data-learn-scrolly]');
+    if (!root || !('IntersectionObserver' in window)) return;
+    var stage = root.querySelector('.learn-stage');
+    var steps = root.querySelectorAll('.step');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var n = e.target.getAttribute('data-step');
+        stage.setAttribute('data-active', n);
+      });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    steps.forEach(function (s) { io.observe(s); });
+  })();
+  </script>
+</section>

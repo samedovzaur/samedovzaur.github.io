@@ -1,0 +1,36 @@
+# Brief for a device model agent, v4 (one device per agent, rebuilt from a reference photo)
+
+Site: /Users/zaursamadov/sites/samedovzaur.github.io. Server: http://localhost:8011/ (start `python3 -m http.server 8011` in the site root if it is down).
+Read, in this order: build/MODEL-RULES.md (rules 7 and 7b are new), build/NOTES-v3.md (engine contract), js/devices/nvidia-rtx-4090.js (the reference spec: copy its structure and conventions), details/<slug>.md (facts; sections 3 to 8), details/README.md (one-line), and EVERY reference photo named for your device below (use the Read tool on the PNG; look at it before you write a single part, and again after every screenshot).
+
+You own ONLY js/devices/<slug>.js (rewrite it from scratch; the old file is the previous attempt that the owner rejected because it did not look like the real object). Do not edit js/gallery.js, index.html, css or any other file.
+
+## Why the last round was rejected
+The old models were black boxes with invented parts: floating copper bars, cylinders, a giant finned heatsink, a tray with pipes. Real boards are green, blue, orange or black with rows of small parts; real lids are silver or gold; the DGX Spark is champagne gold. The fix is rule 7b: build what the photo shows, in its colours (`tone`), with its small parts in their real rows and counts, exploded the way the product's own exploded diagram shows.
+
+## What to build
+- Level 1 = the object as it ships, matching the photo's silhouette: board outline, package position, memory ring, inductor rows, connectors, cages, fans, shroud, shell. Small parts are instanced grids or `at` lists. Every part gets a `tone` from rule 7 when the photo shows a colour different from the role default.
+- Level 2 = the package or die, laid out like the die photo where one is given (dies in the centre, HBM columns at the sides, SRAM bands, GPC rows).
+- Level 3 = one core, SM, MXU, tile, bank or superlane: schematic floor plan with real counts.
+- Explode along the assembly axis as the product's exploded diagram does (shell up, heatsink up, board stays, bottom shell down, edge parts outward).
+- Keep the details file's facts. Where the photo shows a part the file does not name, add it with `schematic: true` and a plain label (rule 7b).
+
+## Verify before reporting
+1. `node build/check-overlap.mjs js/devices/<slug>.js` prints "no overlaps at teardown 0" for every level.
+2. Playwright on the system Chrome with SwiftShader (copy the pattern in /private/tmp/claude-501/-Users-zaursamadov-Documents-live-analyst-room-grado/84dfc1fd-924b-4c16-ada9-7d6035c35f34/scratchpad/levels.py; launch with `channel="chrome"` and the swiftshader args), 1280x900, dark theme, URL http://localhost:8011/?dev=<slug>. Screenshots: level 1 at teardown 0, 50, 100; each sub-level at 0 and 100. Read every PNG NEXT TO the reference photo and fix until the silhouette, colours and part placement match. Repeat at least twice.
+3. Word check: every `line` <= 14 words, every `label` <= 4 words.
+4. `grep -inwFf build/banned-terms.txt js/devices/<slug>.js` is empty.
+5. Zero console errors on the page (collect `pageerror` and console `error` in the Playwright run).
+
+Report: file path, levels and part counts, which tones you used, three sentences on how the level-1 screenshot compares to the photo (what matches, what still differs), what is schematic, and one "Least confident:" line. Do not commit. Do not ask questions.
+
+## Reference photos per device (build/ref/)
+- nvidia-dgx-spark: dgx-spark-box.png (closed box: champagne gold body 150 x 150 x 50.5 mm, speckled foam-like front and back panels in a darker champagne, badge on the front panel, two rounded port cut-outs on the front), dgx-spark-exploded.png (exploded, top to bottom: U-shaped lid, front foam panel, the main board with the GB10 superchip in the centre (GPU die and Grace CPU on one package, LPDDR5X modules around it), ConnectX chip, 4 TB SSD, bottom shell with the rear foam panel). Levels: box -> board -> gb10 package. Tones: champagne for the shell, speckle for the two panels, pcb-black for the board.
+- nvidia-blackwell-b200: gb300-board.png (a black board with two gold Blackwell packages; inside each: two large compute dies side by side in the centre, eight HBM stacks, four along each side of the die pair; a Grace CPU package below; two ConnectX-8 chips). Build the single B200 package: gold substrate, two dies with the die-colour tone, eight HBM stacks (memory) in two columns of four, a nickel lid frame if the file says there is one. Levels: package -> die (two dies joined by NV-HBI) -> HBM stack cross-section.
+- google-tpu: tpu-ironwood-package.png (silver square frame around a gold field; two compute dies side by side in the centre; four HBM stacks in a column on the left, four on the right). Levels: package -> die -> core. Drop the old "tray with pipes" level.
+- cerebras-wse-3: cerebras-wse3-wafer.png (a square gold wafer about 215 mm a side with a faint die grid and a regular grid of round holes), cerebras-wse3-fixture.png (the wafer held in a metal engine block with four posts; label NORTH), cerebras-cs3-schematic.png (how CS-3 systems stack). Levels: engine block with wafer -> wafer (gold, hole grid, die grid lines) -> one core patch. Tones: gold wafer, nickel block.
+- groq-lpu: groq-card.png (an orange PCB card; a silver lidded package left of centre; three black connectors on the top edge; a row of black inductors along the right side; PCIe edge along the bottom), groq3-vs-rubin-package.png (the Groq 3 LPU package: gold substrate, exposed die with horizontal colour bands = the superlanes). Levels: card -> die (bands) -> one superlane. Tones: pcb-orange, silver lid, gold substrate.
+- taalas-hardcore: taalas-card.png (a blue PCB; a silver lidded package left of centre; two QSFP-DD cages stacked on the left edge; a row of twelve black inductors along the top edge; more small parts right; PCIe x16 edge bottom right). Levels: card -> die -> bank. Tones: pcb-blue, silver lid. No heatsink in the photo: do not add one.
+- nvidia-jetson-orin: jetson-thor-exploded.png is the exploded-view reference for the dev kit style (top to bottom: aluminium shell with vents, black heatsink-and-fan block, the module board with the SoC in the centre, the carrier board with ports, the bottom chassis). Build the Orin dev kit from details/nvidia-jetson-orin.md in that order. Tones: anodised shell, matte heatsink, pcb-green module, pcb-black carrier.
+- nvidia-rtx-5090: rtx-5090-pcb.png (the small main board in a hand: GB202 under a silver frame in the centre, sixteen GDDR7 chips ringing it closely, inductor rows along the top and bottom edges, the 12V-2x6 plug top right), rtx-5090-fe.png (the card: two large fans in a dark shroud left and right, the small PCB sits between them, PCIe edge at the bottom, the plug on top). Levels: card -> GB202 die -> SM. Tones: pcb-black, silver frame, graphite shroud.
+- apple-m2-pro and tenstorrent-blackhole: no owner photo. Fetch the official press photo with curl into build/ref/<slug>.png (Apple newsroom M2 Pro chip image: black package, the die in the centre, one LPDDR5 module on each side; Tenstorrent Blackhole p150a product photo), read it, and build to it.
