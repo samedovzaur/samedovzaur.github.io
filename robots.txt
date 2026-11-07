@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://zaur.modimorph.com/sitemap.xml
+Sitemap: https://samedovzaur.github.io/sitemap.xml
